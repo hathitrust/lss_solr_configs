@@ -28,7 +28,7 @@ We use two different versions of schema.xml to enable two different relevance ra
 2. **schema6_BM25_wiDVmondo.xml** Enables the BM25 algorithm with special settings for the OCR field.
    Currently this schema is used in the core-Ny cores i.e. core-1y
 
-All instances use the same **solrconfig.xml** file except for the lss-reindexing Solrs.  (See re-indexing configuration below)
+All instances use the same **solrconfig.xml** file except for the lss-reindexing Solrs.  (See re-indexing configuration https://tools.lib.umich.edu/confluence/display/HAT/Solr+configuration+for+re-indexing?src=contextnavpagetreemode )
 
 
 **1000common.txt** is the list of common words used during indexing to create commongrams.  See https://www.hathitrust.org/blogs/large-scale-search/slow-queries-and-common-words-part-2 for background.

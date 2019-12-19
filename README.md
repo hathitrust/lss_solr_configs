@@ -31,7 +31,11 @@ We use two different versions of schema.xml to enable two different relevance ra
 All instances use the same **solrconfig.xml** file except for the lss-reindexing Solrs.  (See re-indexing configuration https://tools.lib.umich.edu/confluence/display/HAT/Solr+configuration+for+re-indexing?src=contextnavpagetreemode )
 
 
-**1000common.txt** is the list of common words used during indexing to create commongrams.  See https://www.hathitrust.org/blogs/large-scale-search/slow-queries-and-common-words-part-2 for background.
+**1000common.txt** is the list of common words used during indexing to create commongrams.  See https://www.hathitrust.org/blogs/large-scale-search/slow-queries-and-common-words-part-2 for background. See https://tools.lib.umich.edu/confluence/display/HAT/Tuning+CommonGrams+and+the+cache-warming+queries for information on updating the list of words in this file. This file name is specfied in the schema.xml files in these two lines:
+```
+<filter class="solr.CommonGramsFilterFactory" words="1000common.txt" />
+<filter class="solr.CommonGramsQueryFilterFactory" words="1000common.txt" />
+```
 
 
 

@@ -9,8 +9,9 @@ Configuration files for HT full-text search (ls) Solr
 * **1000common.txt**
 * **solrconfig.xml**
 * files symlinked to schema.xml
-  * **schema6_BM25_wiDVmondo.xml**
-  * **schema6_tfidf_wiDVmondo.xml**
+  * **schema_BM25.xml** named **schema6_BM25_wiDVmondo.xml** in production
+  * **schema_tfidf.xml** named **schema6_tfidf_wiDVmondo.xml** in production
+
 
 
 
@@ -23,10 +24,10 @@ These files customize Solr for HT full-text search for Solr 6. Our very large in
 The two critical files for configuring Solr are solrconfig.xml and schema.xml
 We use two different versions of schema.xml to enable two different relevance ranking algorithms
 
-1. **schema6_tfidf_wiDVmondo.xml** Enables the Solr 4 default tf-idf algorithm.
-   Currently this schema is use in the core-Nx cores i.e. core-1x
-2. **schema6_BM25_wiDVmondo.xml** Enables the BM25 algorithm with special settings for the OCR field.
-   Currently this schema is used in the core-Ny cores i.e. core-1y
+1. **schema_tfidf.xml** Enables the Solr 4 default tf-idf algorithm.
+   Currently this schema is use in the core-Nx cores i.e. core-1x and is named **schema6_tfidf_wiDVmondo.xml** in production
+2. **schema_BM25.xml** Enables the BM25 algorithm with special settings for the OCR field.
+   Currently this schema is used in the core-Ny cores i.e. core-1y and is named **schema6_BM25_wiDVmondo.xml** in production
 
 All instances use the same **solrconfig.xml** file except for the lss-reindexing Solrs.  (See re-indexing configuration https://tools.lib.umich.edu/confluence/display/HAT/Solr+configuration+for+re-indexing?src=contextnavpagetreemode )
 

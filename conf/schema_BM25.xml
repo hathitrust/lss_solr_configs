@@ -174,7 +174,7 @@
    <field name="htsource_dv"     type="string"     indexed="true" stored="true" multiValued="true" docValues="true"/>
    
    <copyField source="language" dest="language_dv"/>
-   <copyField source="language" dest="language008_full_dv"/>
+   <copyField source="language008_full" dest="language008_full_dv"/>
    <copyField source="format" dest="format_dv"/>
    <copyField source="htsource" dest="htsource_dv"/>
 

@@ -11,10 +11,11 @@ Configuration files for HT full-text search (ls) Solr
 * files symlinked to schema.xml
   * **schema_BM25.xml** named **schema6_BM25_wiDVmondo.xml** in production
   * **schema_tfidf.xml** named **schema6_tfidf_wiDVmondo.xml** in production
-
-
-
-
+* test files to overwrite production files once testing and changes are finalized
+  * **test_schema_tfidf.xml**
+     references test_1000common.txt file and corrects two errors in schmema_tfidf.xml
+  * **test_1000common.txt**
+    new commongrams file per https://tools.lib.umich.edu/jira/browse/HT-2145
 ## What is the problem we are trying to solve
 
 These files customize Solr for HT full-text search for Solr 6. Our very large indexes require significant changes to Solr defaults in order to work.  We also have custom indexing to deal with multiple languages, and very large documents.

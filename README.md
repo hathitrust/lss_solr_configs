@@ -14,6 +14,7 @@ Configuration files for HT full-text search (ls) Solr
 * test files to overwrite production files once testing and changes are finalized
   * **test_schema_tfidf.xml**
      references test_1000common.txt file and corrects two errors in schmema_tfidf.xml
+  * TODO: create test_schema_BM25.xml and add to repo
   * **test_1000common.txt**
     new commongrams file per https://tools.lib.umich.edu/jira/browse/HT-2145
   * **test_solrconfig.xml**

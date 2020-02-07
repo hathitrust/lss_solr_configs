@@ -17,7 +17,7 @@ Configuration files for HT full-text search (ls) Solr
   * **test_1000common.txt**
     new commongrams file per https://tools.lib.umich.edu/jira/browse/HT-2145
   * **test_solrconfig.xml**
-     currently testing ramBufferSizeMB changes
+     currently testing ramBufferSizeMB changes per https://tools.lib.umich.edu/jira/browse/HT-2199 
 ## What is the problem we are trying to solve
 
 These files customize Solr for HT full-text search for Solr 6. Our very large indexes require significant changes to Solr defaults in order to work.  We also have custom indexing to deal with multiple languages, and very large documents.

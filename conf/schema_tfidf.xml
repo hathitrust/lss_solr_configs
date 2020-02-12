@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<schema name="schema6_tfidf_wiDVmondo $Id: schema6_tfidf_wiDVmondo.xml,v 1.1 2018/06/06 20:52:46 tburtonw Exp tburtonw $" version="1.6">
+<schema name="test_tfidf.xml $Id$" >
 
+  <!-- based on schema6_tfidf_wiDVmondo.xml,v 1.1  -->
+  
   <!-- Old lucene default similarity -->
 <similarity class="solr.ClassicSimilarityFactory"/>
-  
-  <field name="_version_" type="long" indexed="fales" stored="false"/>
+
+<field name="_version_" type="long" indexed="false" stored="false"/>
     
     <!-- ################################################### -->
     <!-- ##########   M B o o k s   F i e l d s   ########## -->
@@ -177,7 +179,7 @@
    <field name="htsource_dv"     type="string"     indexed="true" stored="true" multiValued="true" docValues="true"/>
    
    <copyField source="language" dest="language_dv"/>
-   <copyField source="language008_full" dest="language008_full_dv"/>
+   <copyField source="language" dest="language008_full_dv"/>
    <copyField source="format" dest="format_dv"/>
    <copyField source="htsource" dest="htsource_dv"/>
 
@@ -461,7 +463,7 @@
          outputUnigrams="true"
 	 />
 
-        <filter class="solr.CommonGramsFilterFactory" words="1000common.txt" />
+        <filter class="solr.CommonGramsFilterFactory" words="test_1000common.txt" />
       </analyzer>
   
       <analyzer type="query">

@@ -476,7 +476,7 @@
            outputUnigrams="false"
 	   />
 
-        <filter class="solr.CommonGramsQueryFilterFactory" words="1000common.txt" />
+        <filter class="solr.CommonGramsQueryFilterFactory" words="test_1000common.txt" />
       </analyzer>
     </fieldType>  
 
@@ -484,12 +484,12 @@
       <analyzer type="index">
         <tokenizer class="solr.ICUTokenizerFactory"/>
         <filter class="solr.ICUFoldingFilterFactory"/>
-        <filter class="solr.CommonGramsFilterFactory" words="1000common.txt" />
+        <filter class="solr.CommonGramsFilterFactory" words="test_1000common.txt" />
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.ICUTokenizerFactory"/>
         <filter class="solr.ICUFoldingFilterFactory"/>
-        <filter class="solr.CommonGramsQueryFilterFactory" words="1000common.txt" />
+        <filter class="solr.CommonGramsQueryFilterFactory" words="test_1000common.txt" />
       </analyzer>
     </fieldType>  
 

@@ -73,6 +73,9 @@
        The examples below can be used to load some solr-contribs along 
        with their external dependencies.
     -->
+
+  <!-- ######## June 14 2019 tbw comment out stuff we don't use ########
+       
   <lib dir="${solr.install.dir:../../../..}/contrib/extraction/lib" regex=".*\.jar" />
   <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-cell-\d.*\.jar" />
 
@@ -87,7 +90,10 @@
 
   <lib dir="${solr.install.dir:../../../..}/contrib/velocity/lib" regex=".*\.jar" />
   <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-velocity-\d.*\.jar" />
-
+  ###################### -->
+<!-- tbw June 14 2019 tbw try a direct solr home path -->
+   <lib dir="${solr.solr.home}/lib" regex=".*\.jar"/>
+  
   <!-- an exact 'path' can be used instead of a 'dir' to specify a 
        specific jar file.  This will cause a serious error to be logged 
        if it can't be loaded.
@@ -171,9 +177,12 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
     <useCompoundFile>false</useCompoundFile> 
 
     <!-- change this and parameters below so each shard merges at different rate-->
-     <ramBufferSizeMB>960</ramBufferSizeMB> 
-    
-     <mergePolicyFactory class="org.apache.solr.index.TieredMergePolicyFactory">
+  
+    <!--  <ramBufferSizeMB>960</ramBufferSizeMB>-->
+    <!-- Currently Solr on buzz has 32Gb Try with 4GB so we exceed the xxx max limit --> 
+      <ramBufferSizeMB>4096</ramBufferSizeMB> 
+   
+    <mergePolicyFactory class="org.apache.solr.index.TieredMergePolicyFactory">
        <int name="maxMergeAtOnce">30</int>
        <int name="segmentsPerTier">40</int>
        
@@ -215,8 +224,11 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
 	  something on the order of 100,000 docs
 	  For the 8 core experiment each core will have about 250K docs
 	  So lets use 1/10th of that or 25K docs
+	  #changing for 1.9 million docs on buzz on one shard
+	  # largest segment allowed maxMergedSegmentMB is 20GB but largest we see are about 18 and hold about 25,000 docs
+	  # so we want the major to be below that so that we see large merges differentiated from merges with 1000 docs. (changed from 25K to 15k)
       -->
-      <majorMergeDocs>25000</majorMergeDocs>
+      <majorMergeDocs>15000</majorMergeDocs>
       <bool name="mergeDetails">true</bool>
     </metrics>
   </indexConfig>

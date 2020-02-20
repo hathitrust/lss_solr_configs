@@ -5,7 +5,7 @@
   <!-- Old lucene default similarity -->
 <similarity class="solr.ClassicSimilarityFactory"/>
   
-  <field name="_version_" type="long" indexed="fales" stored="false"/>
+  <field name="_version_" type="long" indexed="false" stored="false"/>
     
     <!-- ################################################### -->
     <!-- ##########   M B o o k s   F i e l d s   ########## -->

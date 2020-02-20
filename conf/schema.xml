@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<schema name="schema6_BM25_wiDVmondo $Id: schema6_BM25_wiDVmondo.xml,v 1.1 2018/06/06 20:48:30 tburtonw Exp tburtonw $" version="1.6">
+<!DOCTYPE schema 
+[
+  <!ENTITY similarity SYSTEM "./similarity.xml">
+]>
 
-  <field name="_version_" type="long" indexed="fales" stored="false"/>
+<schema name="schema6_tfidf_wiDVmondo $Id: schema6_tfidf_wiDVmondo.xml,v 1.1 2018/06/06 20:52:46 tburtonw Exp tburtonw $" version="1.6">
+
+  
+  <field name="_version_" type="long" indexed="false" stored="false"/>
     
     <!-- ################################################### -->
     <!-- ##########   M B o o k s   F i e l d s   ########## -->
@@ -473,13 +479,7 @@
 
         <filter class="solr.CommonGramsQueryFilterFactory" words="1000common.txt" />
       </analyzer>
-       <similarity class="solr.BM25SimilarityFactory"  >
-	 <!-- set k1 to a good value for OCR  -->
-	 <float name="k1">10</float>
-	 <float name="b">0.75</float>
-	 <!-- R Muir says set this to true so that Common-Grams don't cause double counting of doc length-->
-	 <bool name="discountOverlaps">true</bool>
-       </similarity>
+      &similarity;
     </fieldType>  
 
     <fieldType name="FullText" class="solr.TextField" positionIncrementGap="100"  autoGeneratePhraseQueries="false" postingsFormat="HTPostingsFormatWrapper" >

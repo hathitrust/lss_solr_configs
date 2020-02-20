@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE config
+[
+  <!ENTITY mergePolicy SYSTEM "./mergePolicy.xml">
+]>
+
+
+
 <!-- $Id: solrconfig.xml,v 1.7 2019/06/14 17:52:18 tburtonw Exp tburtonw $ -->
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,9 +25,9 @@
  limitations under the License.
 -->
 
-<!-- 
+<!--
      For more details about configurations options that may appear in
-     this file, see http://wiki.apache.org/solr/SolrConfigXml. 
+     this file, see http://wiki.apache.org/solr/SolrConfigXml.
 -->
 <config>
   <!-- In all configuration below, a prefix of "solr." for class names
@@ -47,19 +55,19 @@
        instanceDir.
 
        Please note that <lib/> directives are processed in the order
-       that they appear in your solrconfig.xml file, and are "stacked" 
-       on top of each other when building a ClassLoader - so if you have 
-       plugin jars with dependencies on other jars, the "lower level" 
+       that they appear in your solrconfig.xml file, and are "stacked"
+       on top of each other when building a ClassLoader - so if you have
+       plugin jars with dependencies on other jars, the "lower level"
        dependency jars should be loaded first.
 
        If a "./lib" directory exists in your instanceDir, all files
        found in it are included as if you had used the following
        syntax...
-       
+
               <lib dir="./lib" />
     -->
 
-  <!-- A 'dir' option by itself adds any files found in the directory 
+  <!-- A 'dir' option by itself adds any files found in the directory
        to the classpath, this is useful for including all jars in a
        directory.
 
@@ -70,7 +78,7 @@
        If a 'dir' option (with or without a regex) is used and nothing
        is found that matches, a warning will be logged.
 
-       The examples below can be used to load some solr-contribs along 
+       The examples below can be used to load some solr-contribs along
        with their external dependencies.
     -->
   <lib dir="${solr.install.dir:../../../..}/contrib/extraction/lib" regex=".*\.jar" />
@@ -88,12 +96,12 @@
   <lib dir="${solr.install.dir:../../../..}/contrib/velocity/lib" regex=".*\.jar" />
   <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-velocity-\d.*\.jar" />
 
-  <!-- an exact 'path' can be used instead of a 'dir' to specify a 
-       specific jar file.  This will cause a serious error to be logged 
+  <!-- an exact 'path' can be used instead of a 'dir' to specify a
+       specific jar file.  This will cause a serious error to be logged
        if it can't be loaded.
     -->
   <!--
-     <lib path="../a-jar-that-does-not-exist.jar" /> 
+     <lib path="../a-jar-that-does-not-exist.jar" />
   -->
 
   <!-- tbw -->
@@ -107,10 +115,10 @@
       <bool name="mutable">true</bool>
       <str name="managedSchemaResourceName">managed-schema</str>
     </schemaFactory>
-   
+
   -->
 
-  
+
   <!-- Data Directory
 
        Used to specify an alternate directory to hold all index data
@@ -120,7 +128,7 @@
     -->
   <dataDir>${solr.data.dir:}</dataDir>
 
-  
+
 <!-- tbw commented out default.  Since we index offline, we don't need  NRT.
 Besides this has a 4MB default merge which is wrong for our nearly 1MB docs.
  Shawn suggested on the mailing list we use theMMapDirectoryFactory See this
@@ -145,7 +153,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
 
 
 
-  
+
   <!-- The CodecFactory for defining the format of the inverted index.
        The default implementation is SchemaCodecFactory, which is the official Lucene
        index format, but hooks into the schema to provide per-field customization of
@@ -154,7 +162,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
        are experimental, so if you choose to customize the index format, it's a good
        idea to convert back to the official format e.g. via IndexWriter.addIndexes(IndexReader)
        before upgrading to a newer version to avoid unnecessary reindexing.
-       A "compressionMode" string element can be added to <codecFactory> to choose 
+       A "compressionMode" string element can be added to <codecFactory> to choose
        between the existing compression modes in the default codec: "BEST_SPEED" (default)
        or "BEST_COMPRESSION".
   -->
@@ -164,34 +172,19 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
        Index Config - These settings control low-level behavior of indexing
        Most example settings here show the default value, but are commented
        out, to more easily see where customizations have been made.
-       
+
        Note: This replaces <indexDefaults> and <mainIndex> from older versions
        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
   <indexConfig>
-    <useCompoundFile>false</useCompoundFile> 
+    <useCompoundFile>false</useCompoundFile>
 
-    <!-- change this and parameters below so each shard merges at different rate-->
-     <ramBufferSizeMB>960</ramBufferSizeMB> 
-    
-     <mergePolicyFactory class="org.apache.solr.index.TieredMergePolicyFactory">
-       <int name="maxMergeAtOnce">30</int>
-       <int name="segmentsPerTier">40</int>
-       
-       <double name="maxMergedSegmentMB">20000</double>-->
-       <!-- don't know what to set this to to prevent any CFS-->
-       <!--could try maxCFSSegmentSizeMB instead
-	   WARNING  this might blow up try 128MB which should accomodate small segments See https://www.slideshare.net/sematext/solr-search-engine-optimize-is-not-bad-for-you -->
-       <!--<double name="noCFSRatio">0.0</double>-->
-       <int name="maxCFSSegmentSizeMB">128</int>
-       
-       
-     </mergePolicyFactory>
-     
-     
+     <!-- Simlink in the right file at ./mergePolicy.xml for each core -->
+      &mergePolicy;
+
 	<!--tbw find email from Shawn where this was suggested-->
        <mergeScheduler class="org.apache.lucene.index.ConcurrentMergeScheduler">
          <int name="maxThreadCount">1</int>
-         <int name="maxMergeCount">6</int> 
+         <int name="maxMergeCount">6</int>
        </mergeScheduler>
 
  <!-- Switching back to 'single' to allow for the index and config to be shared via snap with the search solrs. - skorner -->
@@ -199,9 +192,9 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
 
 <!-- we may need to update this to not keep even 1 need to check -->
     <deletionPolicy class="solr.SolrDeletionPolicy">
-       <str name="maxCommitsToKeep">1</str> 
+       <str name="maxCommitsToKeep">1</str>
       <!-- The number of optimized commit points to be kept -->
-      <str name="maxOptimizedCommitsToKeep">0</str> 
+      <str name="maxOptimizedCommitsToKeep">0</str>
     </deletionPolicy>
 
 
@@ -221,7 +214,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
     </metrics>
   </indexConfig>
 
- 
+
   <jmx />
 
   <!-- The default high-performance update handler -->
@@ -240,7 +233,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
 
          Perform a hard commit automatically under certain conditions.
          Instead of enabling autoCommit, consider using "commitWithin"
-         when adding documents. 
+         when adding documents.
 
          http://wiki.apache.org/solr/UpdateXmlMessages
 
@@ -249,7 +242,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
 
          maxTime - Maximum amount of time in ms that is allowed to pass
                    since a document was added before automatically
-                   triggering a new commit. 
+                   triggering a new commit.
          openSearcher - if false, the commit causes recent index changes
            to be flushed to stable storage, but does not cause a new
            searcher to be opened to make those changes visible.
@@ -257,24 +250,24 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
          If the updateLog is enabled, then it's highly recommended to
          have some sort of hard autoCommit to limit the log size.
     -->
-    
+
 <!-- check whether some basic autocommit would be useful, i.e. when indexing 100,000 docs -->
-<!-- apparently the unit is milliseconds so if we want an hour it would be 3,600,000 
+<!-- apparently the unit is milliseconds so if we want an hour it would be 3,600,000
      below we have it configured for every 10 hours
 -->
 
-     <autoCommit> 
-       
-       <maxTime>${solr.autoCommit.maxTime:36000000}</maxTime> 
-       <openSearcher>false</openSearcher> 
+     <autoCommit>
+
+       <maxTime>${solr.autoCommit.maxTime:36000000}</maxTime>
+       <openSearcher>false</openSearcher>
      </autoCommit>
 
  <!-- We have no reason to do soft commits since the search server uses a static read-only index-->
 
-   
+
   </updateHandler>
-  
-  
+
+
 
   <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
        Query section - these settings control query time things like caches
@@ -286,19 +279,19 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
          is thrown if exceeded.
 
          ** WARNING **
-         
+
          This option actually modifies a global Lucene property that
          will affect all SolrCores.  If multiple solrconfig.xml files
          disagree on this property, the value at any given moment will
          be based on the last SolrCore to be initialized.
-         
+
       -->
     <maxBooleanClauses>2048</maxBooleanClauses>
 
- 
+
     <!-- Slow Query Threshold (in millis)
-    
-         At high request rates, logging all requests can become a bottleneck 
+
+         At high request rates, logging all requests can become a bottleneck
          and therefore INFO logging is often turned off. However, it is still
          useful to be able to set a latency threshold above which a request
          is considered "slow" and log that request at WARN level so we can
@@ -312,7 +305,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
 
          There are two implementations of cache available for Solr,
          LRUCache, based on a synchronized LinkedHashMap, and
-         FastLRUCache, based on a ConcurrentHashMap.  
+         FastLRUCache, based on a ConcurrentHashMap.
 
          FastLRUCache has faster gets and slower puts in single
          threaded operation and thus is generally faster than LRUCache
@@ -329,18 +322,18 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
                  initialSize="512"
                  autowarmCount="128"/>
 
-   
+
     <queryResultCache class="solr.LRUCache"
                      size="100000"
                      initialSize="100000"
                      autowarmCount="50000"/>
-   
+
     <documentCache class="solr.LRUCache"
                    size="50000"
                    initialSize="50000"
                    autowarmCount="0"/>
-    
-    <!-- custom cache currently used by block join --> 
+
+    <!-- custom cache currently used by block join -->
     <cache name="perSegFilter"
       class="solr.search.LRUCache"
       size="10"
@@ -349,7 +342,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
       regenerator="solr.NoOpRegenerator" />
 
     <!-- Field Value Cache
-         
+
          Cache used to hold field values that are quickly accessible
          by document id.  The fieldValueCache is created by default
          even if not configured here.
@@ -389,12 +382,12 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
         are collected.  For example, if a search for a particular query
         requests matching documents 10 through 19, and queryWindowSize is 50,
         then documents 0 through 49 will be collected and cached.  Any further
-        requests in that range can be satisfied via the cache.  
+        requests in that range can be satisfied via the cache.
      -->
    <queryResultWindowSize>200</queryResultWindowSize>
 
    <!-- Maximum number of documents to cache for any entry in the
-        queryResultCache. 
+        queryResultCache.
      -->
    <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
 
@@ -416,7 +409,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
        such as /select?qt=XXX
 
        handleSelect="true" will cause the SolrDispatchFilter to process
-       the request and dispatch the query to a handler specified by the 
+       the request and dispatch the query to a handler specified by the
        "qt" param, assuming "/select" isn't already registered.
 
        handleSelect="false" will cause the SolrDispatchFilter to
@@ -430,7 +423,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
   <requestDispatcher handleSelect="true" >
 
     <!-- XXX tbw review this.  Don't think we want it and its a security issue -->
-    <requestParsers enableRemoteStreaming="false" 
+    <requestParsers enableRemoteStreaming="false"
                     multipartUploadLimitInKB="2048000"
                     formdataUploadLimitInKB="2048"
                     addHttpRequestToContext="false"/>
@@ -438,7 +431,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
     <httpCaching never304="true" />
   </requestDispatcher>
 
-  
+
   <requestHandler name="/select" class="solr.SearchHandler">
     <!-- default values for query parameters can be specified, these
          will be overridden by parameters in the request
@@ -463,7 +456,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
      </lst>
   </requestHandler>
 
-  
+
 
   <initParams path="/update/**,/query,/select,/tvrh,/elevate,/spell,/browse,update">
     <lst name="defaults">
@@ -486,10 +479,10 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
 
   <!-- Solr Cell Update Request Handler
 
-       http://wiki.apache.org/solr/ExtractingRequestHandler 
+       http://wiki.apache.org/solr/ExtractingRequestHandler
 
     -->
-  <requestHandler name="/update/extract" 
+  <requestHandler name="/update/extract"
                   startup="lazy"
                   class="solr.extraction.ExtractingRequestHandler" >
     <lst name="defaults">
@@ -514,8 +507,8 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
 
        This is purely as an example.
 
-       In reality you will likely want to add the component to your 
-       already specified request handlers. 
+       In reality you will likely want to add the component to your
+       already specified request handlers.
     -->
   <requestHandler name="/tvrh" class="solr.SearchHandler" startup="lazy">
     <lst name="defaults">
@@ -541,13 +534,13 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
      <lst name="defaults">
       <bool name="terms">true</bool>
       <bool name="distrib">false</bool>
-    </lst>     
+    </lst>
     <arr name="components">
       <str>terms</str>
     </arr>
   </requestHandler>
 
-  
+
   <queryResponseWriter name="json" class="solr.JSONResponseWriter">
      <!-- For the purposes of the tutorial, JSON responses are written as
       plain text so that they are easy to read in *any* browser.
@@ -555,7 +548,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
      -->
     <str name="content-type">text/plain; charset=UTF-8</str>
   </queryResponseWriter>
-  
+
 
   <queryParser enable="${solr.ltr.enabled:false}" name="ltr" class="org.apache.solr.ltr.search.LTRQParserPlugin"/>
 

@@ -100,7 +100,7 @@
   <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-velocity-\d.*\.jar" />
   <lib dir="${solr.solr.home}/lib" regex=".*\.jar"/>
 
- <--
+ <!--
      <lib path="../a-jar-that-does-not-exist.jar" />
   -->
 

@@ -467,7 +467,7 @@
          outputUnigrams="true"
 	 />
 
-        <filter class="solr.CommonGramsFilterFactory" words="test_1000common.txt" />
+        <filter class="solr.CommonGramsFilterFactory" words="1000common.txt" />
       </analyzer>
 
       <analyzer type="query">

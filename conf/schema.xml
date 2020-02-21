@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<schema name="test_tfidf.xml $Id$" >
+<!DOCTYPE schema 
+[
+  <!ENTITY similarity SYSTEM "./similarity.xml">
+]>
 
-  <!-- based on schema6_tfidf_wiDVmondo.xml,v 1.1  -->
+<schema name="schema6_tfidf_wiDVmondo $Id: schema6_tfidf_wiDVmondo.xml,v 1.1 2018/06/06 20:52:46 tburtonw Exp tburtonw $" version="1.6">
 
-  <!-- Old lucene default similarity -->
-<similarity class="solr.ClassicSimilarityFactory"/>
-
-<field name="_version_" type="long" indexed="false" stored="false"/>
-    
+  
+  <field name="_version_" type="long" indexed="false" stored="false"/>
 
     <!-- ################################################### -->
     <!-- ##########   M B o o k s   F i e l d s   ########## -->
@@ -467,7 +467,7 @@
          outputUnigrams="true"
 	 />
 
-        <filter class="solr.CommonGramsFilterFactory" words="test_1000common.txt" />
+        <filter class="solr.CommonGramsFilterFactory" words="1000common.txt" />
       </analyzer>
 
       <analyzer type="query">
@@ -482,7 +482,8 @@
 
         <filter class="solr.CommonGramsQueryFilterFactory" words="1000common.txt" />
       </analyzer>
-    </fieldType>
+      &similarity;
+    </fieldType>  
 
     <fieldType name="FullText" class="solr.TextField" positionIncrementGap="100"  autoGeneratePhraseQueries="false" postingsFormat="HTPostingsFormatWrapper" >
       <analyzer type="index">

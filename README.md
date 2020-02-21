@@ -3,48 +3,42 @@ Configuration files for HT full-text search (ls) Solr
 
 # WARNING!  Work in progress do not use until this notice is removed!
 
+## Overview
 
-## Files
+A solr configuration for LSS consists of five symlinks in the same directory
+that point to the correct files for that core:
 
-* **1000common.txt**
-* **solrconfig.xml**
-* files symlinked to schema.xml
-  * **schema_BM25.xml** named **schema6_BM25_wiDVmondo.xml** in production
-  * **schema_tfidf.xml** named **schema6_tfidf_wiDVmondo.xml** in production
-* test files to overwrite production files once testing and changes are finalized
-  * **test_schema_tfidf.xml**
-     references test_1000common.txt file and corrects two errors in schmema_tfidf.xml
-  * TODO: create test_schema_BM25.xml and add to repo
-  * **test_1000common.txt**
-    new commongrams file per https://tools.lib.umich.edu/jira/browse/HT-2145
-  * **test_solrconfig.xml**
-     currently testing ramBufferSizeMB changes per https://tools.lib.umich.edu/jira/browse/HT-2199 
+Three of these symlinks will point to the same file regardless of what
+core you're configuring:
+
+* `1000common.txt`.  See [background information](https://www.hathitrust.org/blogs/large-scale-search/slow-queries-and-common-words-part-2)
+and [how to update the list of words](https://tools.lib.umich.edu/confluence/display/HAT/Tuning+CommonGrams+and+the+cache-warming+queries).
+* `schema.xml`, the generic schema file
+* `solrconfig.xml`, the generic solr configuration for handlers and config
+
+The other two files are specific to whether it's an x/y core (`similarity.xml`)
+and what the core number is `mergePolicy.xml` These are referenced in `schema.xml`
+and `solrconfig.xml` via a standard XML `<!ENTITY <name> SYSTEM "./<relative_file_path>">`.
+This allows us to have a single base file that can be modified just by
+putting a symlink to the right file in the conf directory.
+
+
+* `similarity.xml` contains directives to use either the tfidf or BM25 similarity
+scores and are stored in the corresponding directories. We've
+been linking the tfidf file into `core-#x` and the BM25 into `core-#y` for each
+of the cores.
+* `mergePolicy.xml` configures merge variables and ramBuffer size for each 
+  individual core (as [specified in Confluence](https://tools.lib.umich.edu/confluence/display/HAT/Tuning+re-indexing)),
+  with a goal of making them different enough that it's 
+  less likely that many cores will be involved in big merges at the same time.
+
+  Note that production solrs should symlink in `serve/mergePolicy.xml`, while the 
+  indexing servers should use the core-specific version in the 
+  `indexing_core_specific` directory.
+
 ## What is the problem we are trying to solve
 
 These files customize Solr for HT full-text search for Solr 6. Our very large indexes require significant changes to Solr defaults in order to work.  We also have custom indexing to deal with multiple languages, and very large documents.
-
-## Explanation of files
-
-The two critical files for configuring Solr are solrconfig.xml and schema.xml
-We use two different versions of schema.xml to enable two different relevance ranking algorithms
-
-1. **schema_tfidf.xml** Enables the Solr 4 default tf-idf algorithm.
-   Currently this schema is use in the core-Nx cores i.e. core-1x and is named **schema6_tfidf_wiDVmondo.xml** in production
-2. **schema_BM25.xml** Enables the BM25 algorithm with special settings for the OCR field.
-   Currently this schema is used in the core-Ny cores i.e. core-1y and is named **schema6_BM25_wiDVmondo.xml** in production
-
-All instances use the same **solrconfig.xml** file except for the lss-reindexing Solrs.  (See re-indexing configuration https://tools.lib.umich.edu/confluence/display/HAT/Solr+configuration+for+re-indexing?src=contextnavpagetreemode )
-
-
-**1000common.txt** is the list of common words used during indexing to create commongrams.  See https://www.hathitrust.org/blogs/large-scale-search/slow-queries-and-common-words-part-2 for background. See https://tools.lib.umich.edu/confluence/display/HAT/Tuning+CommonGrams+and+the+cache-warming+queries for information on updating the list of words in this file. This file name is specfied in the schema.xml files in these two lines:
-```
-<filter class="solr.CommonGramsFilterFactory" words="1000common.txt" />
-<filter class="solr.CommonGramsQueryFilterFactory" words="1000common.txt" />
-```
-
-
-
-See *Background details* (below) for more details
 
 ## Deployment and Use
 

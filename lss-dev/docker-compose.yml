@@ -1,13 +1,13 @@
----
 version: '3'
 
 services:
-  solr-lss-dev:
-    image: solr:6
+  solr-lss-dev-8:
+    container_name: solr-lss-dev-8
+    image: solr-lss-dev-8
     ports:
       - "8983:8983"
     volumes:
-      - ./core-x:/opt/solr/server/solr/core-x
-      - ./core-y:/opt/solr/server/solr/core-y
+      - ./core-x:/var/solr/data/core-x
+      - ./core-y:/var/solr/data/core-y
       - ..:/opt/lss_solr_configs
       - ../lib:/opt/solr/server/solr/lib

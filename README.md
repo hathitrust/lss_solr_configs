@@ -34,6 +34,17 @@ of the cores.
   indexing servers should use the core-specific version in the 
   `indexing_core_specific` directory.
 
+Build Images
+`docker build -t solr-lss-dev-8 .`
+
+Launch Solr server
+`docker-compose -f lss-dev/docker-compose.yml up`
+
+Stop Solr server
+`docker-compose -f lss-dev/docker-compose.yml down` 
+
+`docker exec -it solr-lss-dev-8 /bin/bash`
+
 ## What is the problem we are trying to solve
 
 These files customize Solr for HT full-text search for Solr 6. Our very large indexes require significant changes to Solr defaults in order to work.  We also have custom indexing to deal with multiple languages, and very large documents.

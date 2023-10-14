@@ -1,7 +1,0 @@
-<similarity class="solr.BM25SimilarityFactory"  >
-	 <!-- set k1 to a good value for OCR  -->
-	 <float name="k1">10</float>
-	 <float name="b">0.75</float>
-	 <!-- R Muir says set this to true so that Common-Grams don't cause double counting of doc length-->
-	 <bool name="discountOverlaps">true</bool>
-</similarity>

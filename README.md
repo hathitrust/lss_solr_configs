@@ -35,7 +35,14 @@ of the cores.
   `indexing_core_specific` directory.
 
 Build Images
-`docker build -t solr-lss-dev-8 .`
+`docker build -t solr-text-search-8 .`
+
+Run the image
+`docker run -p 8983:8983 -t solr-text-search-8`
+
+Running solr using the docker-compose.yml is not working yet, because Solr does not find the cores
+See this page for other having the same issue: https://stackoverflow.com/questions/75581502/solr-in-docker-container-unable-to-work-with-persistent-data-store
+It seems I should create the data folder inside the docker.
 
 Launch Solr server
 `docker-compose -f lss-dev/docker-compose.yml up`

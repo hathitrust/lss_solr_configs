@@ -2,21 +2,17 @@ version: '3'
 
 services:
   solr-lss-8:
-    container_name: solr-text-search-8
+    container_name: full-text-search
+    build:
+      dockerfile: Dockerfile
+      context: ./solr
     image: solr-text-search-8
     ports:
       - "8983:8983"
     volumes:
-      - ./data:/var/solr/data/
-      #- ./core-x:/var/solr/data/core-x
-      #- ./core-y:/var/solr/data/core-y
-      #- ..:/opt/lss_solr_configs
-      #- ../lib:/opt/solr/server/solr/lib
-      #- ./core-x:/var/solr/data/core-x
-      #- ./core-y:/var/solr/data/core-y
-      #- ..:/opt/lss_solr_configs
-      #- ../lib:/opt/solr/server/solr/lib
-      #- ../confisets:/opt/solr/server/solr/configsets
+      -  data:/var/solr/data
 
 volumes:
   data:
+
+

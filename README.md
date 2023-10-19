@@ -40,6 +40,16 @@ Build Images
 Run the image
 `docker run -p 8983:8983 -t solr-text-search-8`
 
+Steps to index data and store it in the image
+
+* Create the image:  `docker build -t solr-text-search-8 .`
+* Excecute the image to create a volume: `docker-compose -f docker-compose.yml up`
+* Indexing data with python script
+* After indexing data, save the image and push the image to the server
+  * `docker container commit d00962259886 solr-text-search-8:latest`
+  * `docker image tag solr-text-search-8:latest ghcr.io/hathitrust/full-text-search-solr:example-8.11`
+  * `docker image push ghcr.io/hathitrust/full-text-search-solr:example-8.11`
+
 Running solr using the docker-compose.yml is not working yet, because Solr does not find the cores
 See this page for other having the same issue: https://stackoverflow.com/questions/75581502/solr-in-docker-container-unable-to-work-with-persistent-data-store
 It seems I should create the data folder inside the docker.

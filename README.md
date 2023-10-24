@@ -40,6 +40,9 @@ Build Images
 Run the image
 `docker run -p 8983:8983 -t solr-text-search-8`
 
+Use the docker-compose to solr start up and for indexing data
+docker-compose -f docker-compose.yml up
+
 Steps to index data and store it in the image
 
 * Create the image:  `docker build -t solr-text-search-8 .`
@@ -65,6 +68,18 @@ Stop Solr server
 ## What is the problem we are trying to solve
 
 These files customize Solr for HT full-text search for Solr 6. Our very large indexes require significant changes to Solr defaults in order to work.  We also have custom indexing to deal with multiple languages, and very large documents.
+
+## Usefull comands
+
+Delete documents by curl command, you should add commit=true
+
+`curl -X POST -H 'Content-Type: application/json' \
+    'http://<host>:<port>/solr/<core>/update?commit=true' \
+    -d '{ "delete": {"query":"*:*"} }'`
+
+Below one can be used through browser:
+
+`http://host:port/solr/collection_name/update?commit=true&stream.body=<delete><query>*:*</query></delete>`
 
 ## Deployment and Use
 

@@ -4,34 +4,25 @@ services:
   solr-lss-8:
     container_name: full-text-search
     healthcheck:
-        test: [ "CMD", "/usr/bin/wget", "-q", "http://localhost:8983/solr/core-x/admin/ping" ]
+        test: [ "CMD", "/usr/bin/curl", "-s", "-f", "http://localhost:8983/solr/core-x/admin/ping" ]
         interval: 5s
         timeout: 10s
         start_period: 30s
         retries: 5
-    #build:
-    #  dockerfile: Dockerfile
-    #  context: ./solr
-    image: solr:8.11.2 #solr-text-search-8
+
+    image: solr-text-search-8 #solr:8.11.2
     ports:
       - "8983:8983"
     volumes:
-      -  ${PWD}/solrdata:/var/solr/data
-    #command:
-      #- ls -l /var/lib/docker/volumes/lss_solr_configs_data/_data
-      #- cd solrdata
-      #- "echo hello world"
-      #- curl 'http://localhost:8983/solr/core-x/update?commit=true' --data-binary ${PWD}/solrdata/core-data.json -H 'Content-type:application/json'
+      - ${PWD}/solrdata:/var/solr/data
   data_loader:
     build: .
-    command:
-      - curl 'http://localhost:8983/solr/core-x/update?commit=true' --data-binary @_data/core-data.json -H 'Content-type:application/json'
+    entrypoint: ["/bin/sh", "-c", "curl 'http://solr-lss-8:8983/solr/core-x/update?commit=true' --data-binary @solrdata/core-data.json -H 'Content-type:application/json'"]
     volumes:
       - ${PWD}/solrdata:/var/solr/data
     depends_on:
       solr-lss-8:
         condition: service_healthy
-
 volumes:
   solrdata:
 

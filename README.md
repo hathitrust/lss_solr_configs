@@ -1,7 +1,11 @@
 # lss_solr_configs
 Configuration files for HT full-text search (ls) Solr
 
-## Overview
+## What is the problem we are trying to solve
+
+These files customize Solr for HT full-text search for Solr 6. Our very large indexes require significant changes to Solr defaults in order to work.  We also have custom indexing to deal with multiple languages, and very large documents.
+
+## [Legacy] Overview Solr 6 
 
 A solr configuration for LSS consists of five symlinks in the same directory
 that point to the correct files for that core:
@@ -34,29 +38,6 @@ of the cores.
   indexing servers should use the core-specific version in the 
   `indexing_core_specific` directory.
 
-Build Images
-`docker build -t solr-text-search-8 .`
-
-Run the image
-`docker run -p 8983:8983 -t solr-text-search-8`
-
-Use the docker-compose to solr start up and for indexing data
-docker-compose -f docker-compose.yml up
-
-Steps to index data and store it in the image
-
-* Create the image:  `docker build -t solr-text-search-8 .`
-* Excecute the image to create a volume: `docker-compose -f docker-compose.yml up`
-* Indexing data with python script
-* After indexing data, save the image and push the image to the server
-  * `docker container commit d00962259886 solr-text-search-8:latest`
-  * `docker image tag solr-text-search-8:latest ghcr.io/hathitrust/full-text-search-solr:example-8.11`
-  * `docker image push ghcr.io/hathitrust/full-text-search-solr:example-8.11`
-
-Running solr using the docker-compose.yml is not working yet, because Solr does not find the cores
-See this page for other having the same issue: https://stackoverflow.com/questions/75581502/solr-in-docker-container-unable-to-work-with-persistent-data-store
-It seems I should create the data folder inside the docker.
-
 Launch Solr server
 `docker-compose -f lss-dev/docker-compose.yml up`
 
@@ -65,17 +46,70 @@ Stop Solr server
 
 `docker exec -it solr-lss-dev-8 /bin/bash`
 
-## What is the problem we are trying to solve
 
-These files customize Solr for HT full-text search for Solr 6. Our very large indexes require significant changes to Solr defaults in order to work.  We also have custom indexing to deal with multiple languages, and very large documents.
+## Overview Solr 8.11.2 in standalone mode: Upgrading our index from Solr6 to Solr8.11.2 (the last version)
+
+A Solr configuration for full-text search consists of creating a directory (solrdata) that contains all the 
+files and directories Solr needs to start up the server in standalone mode and with one core (core-x).
+
+In this first iteration, minimal changes were made on JAR files, Solr schemas and config files. The main goal was to 
+re-use the previous set up with the Solr 8.
+
+See below the follow steps to upgrade the Solr version.
+1) Create a DockerFile to generate the image **Solr:8.11.2** is based image used.
+
+- **(DockerFile) To Solr recognize the cores, a directory with the core name, should be created inside** 
+the /var/solr/data folder. Inside each core directory, should be added:
+  - solrconfig.xml (configuration file with the most parameters affecting Solr itself) 
+  The solrconfig.xml file is located in the conf/ directory for each collection or core 
+  - data directory 
+  - core.properties -- Solr cores are configured by placing a file named core.properties in a sub-directory 
+  under solr.home. Each core has to be the core.properties field 
+  - conf directory 
+  - lib directory (All the used JARS must add into lib directory)
+- **(DockerFile) Inside /var/sorl/data folder should be added the file solr.xml**
+
+2) Copy some of the Java JARS that was already generated in Catalog
+   - icu4j-62.1.jar 
+   - lucene-analyzers-icu-8.2.0.jar 
+   - lucene-umich-solr-filters-3.0-solr-8.8.2.jar 
+
+3) Upgrading the JAR: HTPostingsFormatWrapper (Check [here](https://github.com/hathitrust/lss_java_code/tree/master) to see all the steps to generate this JAR)
+
+4) Updating schema.xml
+
+* _root_ field is type=int in solr6 and type=string in Solr8. In Solr 8 _root_ field must be defined using the exact same fieldType as the uniqueKey field (id) uses: string
+
+5) Create a docker-compose file to start up Solr server and for indexind data.
+
+The JSON file core-data.json (/solr_json_documents) contains 1.978 generated using the python workflow. These documents are a sample of 
+the documents indexed in [catalog image](https://github.com/hathitrust/hathitrust_catalog_indexer).
+
+
+## How to start up the Solr server
+
+**Create the Image using the Dockerfile**
+`docker build -t solr-text-search-8 .`
+
+**Use the docker-compose file for starting up the Solr server and for indexing data**
+`docker-compose -f docker-compose.yml up`
+
+
+**After indexing data, save the image and push the image to the server** [To TEST]
+  * `docker container commit d00962259886 solr-text-search-8:latest`
+  * `docker image tag solr-text-search-8:latest ghcr.io/hathitrust/full-text-search-solr:example-8.11`
+  * `docker image push ghcr.io/hathitrust/full-text-search-solr:example-8.11`
 
 ## Usefull comands
 
-Delete documents by curl command, you should add commit=true
+**Delete documents by curl command, you should add commit=true**
 
 `curl -X POST -H 'Content-Type: application/json' \
     'http://<host>:<port>/solr/<core>/update?commit=true' \
     -d '{ "delete": {"query":"*:*"} }'`
+
+**Export JSON file with index documents**
+`curl "http://localhost:8983/solr/core-x/select?q=*%3A*&wt=json&indent=true&start=0&rows=2000000000&fl=*" > full-output-of-my-solr-index.json`
 
 Below one can be used through browser:
 

@@ -10,7 +10,7 @@ services:
         start_period: 30s
         retries: 5
 
-    image: solr-text-search-8 #solr:8.11.2
+    image: solr-text-search-8
     ports:
       - "8983:8983"
     volumes:

@@ -100,6 +100,17 @@ the documents indexed in [catalog image](https://github.com/hathitrust/hathitrus
   * `docker image tag solr-text-search-8:latest ghcr.io/hathitrust/full-text-search-solr:example-8.11`
   * `docker image push ghcr.io/hathitrust/full-text-search-solr:example-8.11`
 
+## How to start up the Solr cloud server
+
+`docker-compose -f docker-compose-cloud-mode.yml up`
+
+## Managing the collections
+
+curl -u solr:SolrRocks -X DELETE "http://localhost:8983/api/cluster/configs/core-x"
+curl -u solr:SolrRocks -X PUT --header "Content-Type:application/octet-stream" --data-binary @core-x.zip "http://localhost:8983/api/cluster/configs/core-x"
+curl -u $user:$password "$host/solr/admin/collections?action=CREATE&name=core-x&numShards=1&collection.configName=core-x"
+
+
 ## Usefull comands
 
 **Delete documents by curl command, you should add commit=true**

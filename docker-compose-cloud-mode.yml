@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  solr1:
+    build: solrcloud_setup/.
+    container_name: solr1
+    ports:
+     - "8983:8983"
+    environment:
+      - ZK_HOST=zoo1:2181
+      - SOLR_OPTS=-XX:-UseLargePages # get rid of "shared memory" warnings on Solr startup => https://solr.apache.org/guide/solr/latest/deployment-guide/docker-faq.html
+    #env_file:
+    #  - env.example
+    networks:
+      - solr
+    depends_on:
+      - zoo1
+    command:
+      - solr-foreground
+  zoo1:
+    image: zookeeper:3.6
+    container_name: zoo1
+    restart: always
+    #hostname: zoo1
+    ports:
+      - 2181:2181
+      #- 7001:7000
+    environment:
+      ZOO_MY_ID: 1
+      #ZOO_SERVERS: server.1=zoo1:2888:3888;2181
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr, conf, ruok
+      ZOO_CFG_EXTRA: "metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000 metricsProvider.exportJvmInfo=true"
+      ZOO_LOG_DIR: "/logs"
+    networks:
+      - solr
+  #collection_creator:
+  #  build: solrcloud_setup/.
+  #  networks:
+  #    - solr
+  #  depends_on:
+  #    - solr1
+  #    - zoo1
+  #  command: ["/bin/bash", "-c", "collection_manager.sh"]
+networks:
+  solr:

@@ -16,4 +16,18 @@ COPY --chown=solr:solr solr_json_documents/core-data.json $SOLR_DATA_PATH
 
 COPY --chown=solr:solr solrdata /var/solr/data
 
+COPY --chown=solr:solr solrdata/core-x /server/solr/configs/core-x
+
+COPY --chown=solr:solr solrcloud_setup/init_files/solr_init.sh /etc/default/solr.in.sh
+
+#COPY --chown=solr:solr zoodata /var/lib/zookeeper
+COPY --chown=solr:solr solrdata/zoo.cfg /conf/
+
+COPY --chown=solr:solr solrcloud_setup/core-x.zip $SOLR_DATA_PATH
+
+
+
 USER solr
+
+
+#-Dsolr.default.confdir=/opt/solr/server/solr/configsets/_default/conf

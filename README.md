@@ -108,6 +108,8 @@ the documents indexed in [catalog image](https://github.com/hathitrust/hathitrus
     'http://<host>:<port>/solr/<core>/update?commit=true' \
     -d '{ "delete": {"query":"*:*"} }'`
 
+curl `http://localhost:8983/solr/admin/collections?action=CREATE&name=core-x&numShards=2&replicationFactor=1&wt=xml`
+
 **Export JSON file with index documents**
 `curl "http://localhost:8983/solr/core-x/select?q=*%3A*&wt=json&indent=true&start=0&rows=2000000000&fl=*" > full-output-of-my-solr-index.json`
 

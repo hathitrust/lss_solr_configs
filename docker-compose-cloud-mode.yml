@@ -15,12 +15,6 @@ services:
       - zoo1
     command:
       - solr-foreground
-    #healthcheck:
-    #  test: [ "CMD", "/usr/bin/curl", "-u", "solr:SolrRocks", "-s", "-f", "http://localhost:8983/api/cluster/configs/core-x/ping" ]
-    #  interval: 5s
-    ##  timeout: 10s
-    ##  start_period: 30s
-    #  retries: 5
   zoo1:
     image: zookeeper:3.6
     container_name: zoo1
@@ -36,15 +30,5 @@ services:
       ZOO_LOG_DIR: "/logs"
     networks:
       - solr
-  #data_loader:
-  #  build: .
-  #  entrypoint: [ "/bin/sh", "-c", "curl -u solr:SolrRocks 'http://solr1:8983/solr/core-x/update?commit=true' --data-binary @solr_json_documents/core-data.json -H 'Content-type:application/json'" ]
-  #  volumes:
-  #    - ${PWD}/solrcloud_setup/solr_json_documents:/var/solr/data
-  #  depends_on:
-  #    - solr1
-        #condition: service_healthy
 networks:
   solr:
-#volumes:
-#  solr_json_documents:

@@ -104,11 +104,21 @@ the documents indexed in [catalog image](https://github.com/hathitrust/hathitrus
 
 `docker-compose -f docker-compose-cloud-mode.yml up`
 
-## Managing the collections
+## Managing the collections through the API
 
-curl -u solr:SolrRocks -X DELETE "http://localhost:8983/api/cluster/configs/core-x"
-curl -u solr:SolrRocks -X PUT --header "Content-Type:application/octet-stream" --data-binary @core-x.zip "http://localhost:8983/api/cluster/configs/core-x"
-curl -u $user:$password "$host/solr/admin/collections?action=CREATE&name=core-x&numShards=1&collection.configName=core-x"
+# Command to create core-x collection. Recommendation: Pass the instanceDir and the dataDir to the curl command
+`curl -u solr:SolrRocks "http://localhost:8983/solr/admin/collections?action=CREATE&name=core-x&instanceDir=/var/solr/data/core-x&numShards=1&collection.configName=core-x&dataDir=/var/solr/data/core-x"`
+
+# Command to index documents into core-x collection
+`curl -u solr:SolrRocks 'http://localhost:8983/solr/core-x/update?commit=true' --data-binary @core-data.json -H 'Content-type:application/json'`
+
+# Others curl commands to access
+
+* Delete a configset
+`curl -u solr:SolrRocks -X DELETE "http://localhost:8983/api/cluster/configs/core-x"`
+
+* Create a configset through a .zip file (You should create the zip file using this command: e.g. `zip -r core-x.zip core-x`)
+`curl -u solr:SolrRocks -X PUT --header "Content-Type:application/octet-stream" --data-binary @core-x.zip "http://localhost:8983/api/cluster/configs/core-x"`
 
 
 ## Usefull comands

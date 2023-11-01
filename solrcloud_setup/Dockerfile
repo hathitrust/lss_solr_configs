@@ -15,6 +15,8 @@ COPY --chown=solr:solr lib /var/solr/lib
 COPY --chown=solr:solr init_files/security.json /var/solr/data/security.json
 COPY --chown=solr:solr --chmod=0755 init_files/solr_init.sh /usr/bin/solr_init.sh
 
+COPY --chown=solr:solr ../solr_json_documents/core-data.json /var/solr/data/core-data.json
+
 ENTRYPOINT ["/usr/bin/solr_init.sh"]
 
 #ENTRYPOINT ["/var/solr/data/collection_manager.sh"]

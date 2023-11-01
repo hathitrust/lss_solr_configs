@@ -84,7 +84,18 @@
 
   <!-- ######## June 14 2019 tbw comment out stuff we don't use ######## -->
 
-  <!-- <lib dir="${solr.install.dir:../../../..}/contrib/extraction/lib" regex=".*\.jar" /> -->
+    <!--Lianet Oct 31 2023 -->
+
+    <!-- Load up the libaries -->
+    <lib dir="${solr.install.dir}/contrib/analysis-extras/lucene-libs" regex=".*\.jar"/>
+    <lib dir="${solr.install.dir}/contrib/analysis-extras/lib" regex=".*\.jar"/>
+
+    <lib dir="${solr.solr.home}/../lib" regex=".*\.jar"/>
+
+    <!--This is where the dockerfile puts stuff-->
+    <!-- <lib dir="${solr.solr.home}/${solr.core.name}/lib" regex=".*\.jar"/> -->
+
+    <!-- <lib dir="${solr.install.dir:../../../..}/contrib/extraction/lib" regex=".*\.jar" /> -->
   <!-- <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-cell-\d.*\.jar" /> -->
 
   <!-- <lib dir="${solr.install.dir:../../../..}/contrib/clustering/lib/" regex=".*\.jar" /> -->
@@ -103,8 +114,8 @@
   <lib dir="${solr.solr.home}/${solr.core.name}/conf/lib" regex=".*\.jar"/> -->
 
     <!-- Load up the libaries -->
-  <lib dir="${solr.solr.home}/${solr.core.name}/lib" regex=".*\.jar"/>
-  <lib dir="${solr.solr.home}/${solr.core.name}/conf/lib" regex=".*\.jar"/>
+  <!-- <lib dir="${solr.solr.home}/${solr.core.name}/lib" regex=".*\.jar"/> -->
+  <!-- <lib dir="${solr.solr.home}/${solr.core.name}/conf/lib" regex=".*\.jar"/> -->
  <!--
      <lib path="../a-jar-that-does-not-exist.jar" />
   -->
@@ -138,7 +149,7 @@
        replication is in use, this should match the replication
        configuration.
     -->
-  <!-- <dataDir>${solr.data.dir:}</dataDir> -->
+  <dataDir>${solr.data.dir:}</dataDir>
 
 
   <!-- Load up the libaries -->
@@ -207,7 +218,7 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
        </mergeScheduler>
 
  <!-- Switching back to 'single' to allow for the index and config to be shared via snap with the search solrs. - skorner -->
- <lockType>${solr.lock.type:single}</lockType>
+ <lockType>${solr.lock.type:native}</lockType>
 
 <!-- we may need to update this to not keep even 1 need to check -->
     <deletionPolicy class="solr.SolrDeletionPolicy">

@@ -106,6 +106,8 @@ the documents indexed in [catalog image](https://github.com/hathitrust/hathitrus
 
 ## Managing the collections through the API
 
+Execute the shell script `./collection_manager.sh` inside solrcloud_setup folder to create core-x collection and to index data
+
 # Command to create core-x collection. Recommendation: Pass the instanceDir and the dataDir to the curl command
 `curl -u solr:SolrRocks "http://localhost:8983/solr/admin/collections?action=CREATE&name=core-x&instanceDir=/var/solr/data/core-x&numShards=1&collection.configName=core-x&dataDir=/var/solr/data/core-x"`
 

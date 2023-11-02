@@ -100,13 +100,28 @@ the documents indexed in [catalog image](https://github.com/hathitrust/hathitrus
   * `docker image tag solr-text-search-8:latest ghcr.io/hathitrust/full-text-search-solr:example-8.11`
   * `docker image push ghcr.io/hathitrust/full-text-search-solr:example-8.11`
 
-## How to start up the Solr cloud server
 
-`docker-compose -f docker-compose-cloud-mode.yml up`
+## Overview Solr 8.11.2 in cloud mode: Upgrading our index from Solr6 to Solr8.11.2 (the last version)
 
-## Managing the collections through the API
+A solrCloud configuration for LSS consists on a Solr cluster with a single node and a single Zookeeper ensamble to the Solr server.
 
-Execute the shell script `./collection_manager.sh` inside solrcloud_setup folder to create core-x collection and to index data
+A ZooKeeper Command Line Interface (CLI) script is used to interact directly with Solr configuration files stored in ZooKeeper.
+
+The **upconfig** command is used to upload the core configuration to ZooKeeper, this way we ensure that all collections
+using that configuration (throughout the Cloud, on all the servers) have that specific config. 
+So you only need to upload it once, on one server.
+
+
+
+## How to start up the Solr cloud server, create core-x collection and index documents
+
+
+* `docker-compose -f docker-compose-cloud-mode.yml up`
+
+* `cd solrcloud_setup`
+
+* `./collection_manager.sh`
+
 
 # Command to create core-x collection. Recommendation: Pass the instanceDir and the dataDir to the curl command
 `curl -u solr:SolrRocks "http://localhost:8983/solr/admin/collections?action=CREATE&name=core-x&instanceDir=/var/solr/data/core-x&numShards=1&collection.configName=core-x&dataDir=/var/solr/data/core-x"`

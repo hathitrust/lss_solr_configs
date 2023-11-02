@@ -13,12 +13,3 @@ echo "Starting up Solr and Zookeeper!!!"
 
 # runs docker entry-point.sh and whatever is in command
 exec /opt/docker-solr/scripts/docker-entrypoint.sh "$@"
-
-echo "SOLR variables"
-export user=solr
-export password=SolrRocks
-export host="http://localhost:8983"
-
-#Creating collection
-#echo "Creating collection"
-#curl -u solr:SolrRocks "http://localhost:8983/solr/admin/collections?action=CREATE&name=core-x&instanceDir=/var/solr/data/core-x&numShards=1&collection.configName=core-x&dataDir=/var/solr/data/core-x"

@@ -116,7 +116,7 @@ So you only need to upload it once, on one server.
 ## How to start up the Solr cloud server, create core-x collection and index documents
 
 
-* `docker-compose -f docker-compose-cloud-mode.yml up`
+* `docker compose up`
 
 * `cd solrcloud_setup`
 

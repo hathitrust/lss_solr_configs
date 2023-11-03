@@ -20,5 +20,3 @@ COPY --chown=solr:solr solr_json_documents /var/solr/data
 COPY --chown=solr:solr --chmod=0755 collection_manager.sh /var/solr/data/collection_manager.sh
 
 ENTRYPOINT ["/usr/bin/solr_init.sh"]
-
-#ENTRYPOINT ["/var/solr/data/collection_manager.sh"]

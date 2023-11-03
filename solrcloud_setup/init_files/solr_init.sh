@@ -1,15 +1,24 @@
 #!/bin/bash
 
-# enables solr to start with basic auth turned on
-solr zk cp /var/solr/data/security.json zk:security.json -z zoo1:2181
+echo "Starting up Solr and Zookeeper 🌞 🐘🦓🦒!!!"
 
-# uploads the configuration in the core-x directory
-solr zk upconfig -z  zoo1:2181 -n core-x -d /core-x
+export SOLR_HOST=127.0.0.1
 
-# Link a collection to a Configset
-#solr zk link-config -z zoo1:2181 -c core-x -n core-x
+echo "SOLR_OPTS $SOLR_OPTS"
+solr start -c
 
-echo "Starting up Solr and Zookeeper!!!"
+# Need to set this AFTER starting solr - otherwise it expects we have one
+# already running..
+export ZK_HOST="127.0.0.1:9983"
 
-# runs docker entry-point.sh and whatever is in command
-exec /opt/docker-solr/scripts/docker-entrypoint.sh "$@"
+echo "🐘🦓🦒 Checking Zookeeper on $ZK_HOST"
+/opt/docker-solr/scripts/wait-for-zookeeper.sh
+echo "🌞 Checking Solr"
+/opt/docker-solr/scripts/wait-for-solr.sh
+
+# uploads the configuration in the core-x directory and creates a collection
+solr create_collection -c core-x -d /core-x
+
+cat /var/solr/logs/solr.log
+
+# Index some data...

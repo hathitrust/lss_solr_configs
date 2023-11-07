@@ -19,7 +19,7 @@ echo "🌞 Checking Solr"
 /opt/docker-solr/scripts/wait-for-solr.sh
 
 # uploads the configuration in the core-x directory and creates a collection
-solr create_collection -c core-x -d _default #-d core-x/ -shards 1 -replicationFactor 1
+solr create_collection -c core-x -d core-x/ -shards 1 -replicationFactor 1
 
 cat /var/solr/logs/solr.log
 

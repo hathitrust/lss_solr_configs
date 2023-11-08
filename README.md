@@ -137,7 +137,7 @@ It is the best alternative for testing and for integrating in babel-local-dev re
 Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
 following specifications
 
-`solr-lss-dev:
+```solr-lss-dev:
     image: ghcr.io/hathitrust/full-text-cloud-embedded_zookeeper:example_8.11 
     #build: ./lss_solr_configs/solrcloud_setup #solrcloud_setup/.
     container_name: solr-lss-dev
@@ -159,7 +159,8 @@ following specifications
         - solr_data:/var/solr/data
       depends_on:
         solr-lss-dev:
-          condition: service_healthy`
+          condition: service_healthy
+```
 
 You might add the volume solr_data to the list of volume.
 
@@ -167,15 +168,75 @@ Option 3: Solr 8.11.2 Set up Solr and an external Zookeeper ensemble
 
 Have authentication, it is the better option for production environment, it is more verbose the integration in babel-local-dev repository
 
+The docker starts up a Solr server without collections, then the script collection_manager.sh should be executed to create 
+the collection and index documents in the index.
+
+* `docker compose -f docker-compose_external_zooKeeper.yml up`
+
+* `cd solrCloud_external_zooKeeper`
+
+* `docker exec solr1 /var/solr/data/collection_manager.sh`
+
+# How to integrate in babel-local-dev
+
+Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
+following specifications
+
+```solr-lss-dev:
+    build: ./lss_solr_configs/solrCloud_external_zooKeeper
+    container_name: solr-lss-dev
+    ports:
+     - "8983:8983"
+    environment:
+      - ZK_HOST=zoo1:2181
+      - SOLR_OPTS=-XX:-UseLargePages 
+    depends_on:
+      - zoo1
+    volumes:
+      - solr1_data:/var/solr/data
+    command:
+      - solr-foreground
+  zoo1:
+    image: zookeeper:3.6
+    container_name: zoo1
+    restart: always
+    hostname: zoo1
+    ports:
+      - 2181:2181
+    environment:
+      ZOO_MY_ID: 1 
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr, conf, ruok
+      ZOO_CFG_EXTRA: "metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000 metricsProvider.exportJvmInfo=true"
+      ZOO_LOG_DIR: "/logs"
+    volumes:
+      - zookeeper1_log:/logs
+      - zookeeper1_data:/data
+      - zookeeper1_datalog:/datalog
+      - zookeeper1_wd:/apache-zookeeper-3.6.0-bin
+```
+
+You might add the volume following list of volume to the docker-compose file.
+
+```solr1_data:
+
+  zookeeper1_data:
+  zookeeper1_datalog:
+  zookeeper1_log:
+  zookeeper1_wd:
+
+```
+
+To start up the application, 
+ docker-compose build
+ docker-compose up 
+
+and to create the collection and index documents in full-text search server use the command below
+
+`docker exec solr-lss-dev /var/solr/data/collection_manager.sh`
+
+
 ## How to start up the Solr cloud server, create core-x collection and index documents
-
-
-* `docker compose up`
-
-* `cd solrcloud_setup`
-
-* `./collection_manager.sh`
-
 
 # Command to create core-x collection. Recommendation: Pass the instanceDir and the dataDir to the curl command
 `curl -u solr:SolrRocks "http://localhost:8983/solr/admin/collections?action=CREATE&name=core-x&instanceDir=/var/solr/data/core-x&numShards=1&collection.configName=core-x&dataDir=/var/solr/data/core-x"`

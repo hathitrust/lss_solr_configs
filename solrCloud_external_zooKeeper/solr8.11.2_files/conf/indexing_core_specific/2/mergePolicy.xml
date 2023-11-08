@@ -1,0 +1,15 @@
+     <ramBufferSizeMB>2816</ramBufferSizeMB>
+
+     <mergePolicyFactory class="org.apache.solr.index.TieredMergePolicyFactory">
+       <int name="maxMergeAtOnce">30</int>
+       <int name="segmentsPerTier">40</int>
+
+       <double name="maxMergedSegmentMB">20000</double>
+       <!-- don't know what to set this to to prevent any CFS-->
+       <!--could try maxCFSSegmentSizeMB instead
+	   WARNING  this might blow up try 128MB which should accomodate small segments See https://www.slideshare.net/sematext/solr-search-engine-optimize-is-not-bad-for-you -->
+       <!--<double name="noCFSRatio">0.0</double>-->
+       <int name="maxCFSSegmentSizeMB">128</int>
+
+
+     </mergePolicyFactory>

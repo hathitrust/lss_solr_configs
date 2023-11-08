@@ -111,7 +111,61 @@ The **upconfig** command is used to upload the core configuration to ZooKeeper, 
 using that configuration (throughout the Cloud, on all the servers) have that specific config. 
 So you only need to upload it once, on one server.
 
+Option 1: Solr 8.11.2 standalone mode
 
+Option 2: Solr 8.11.2 Solr’s embedded ZooKeeper instance 
+While using Solr’s embedded ZooKeeper instance is fine for getting started, you shouldn’t use this in production because it does not provide any failover: if the Solr instance that hosts ZooKeeper shuts down, ZooKeeper is also shut down. Any shards or Solr instances that rely on it will not be able to communicate with it or each other.
+
+
+It is the best alternative for testing and for integrating in babel-local-dev repository
+
+# Build an image
+`docker build -t full-text-search-embedded_zoo solrCloud_embedded_zooKeeper`
+
+# Execute the container
+* `docker compose -f docker-compose_embedded_zooKeeper.yml up`
+
+# Build the image in the repository
+`docker build -t ghcr.io/hathitrust/full-text-cloud-embedded_zookeeper:example_8.11 solrCloud_embedded_zooKeeper`
+
+# Push the image to use it in different projects
+
+`docker image push ghcr.io/hathitrust/full-text-cloud-embedded_zookeeper:example_8.11`
+
+# How to integrate in babel-local-dev
+
+Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
+following specifications
+
+`solr-lss-dev:
+    image: ghcr.io/hathitrust/full-text-cloud-embedded_zookeeper:example_8.11 
+    #build: ./lss_solr_configs/solrcloud_setup #solrcloud_setup/.
+    container_name: solr-lss-dev
+    ports:
+     - "8983:8983"
+    volumes:
+      - solr_data:/var/solr/data
+    command: solr-foreground -c
+    healthcheck:
+      test: ["CMD-SHELL", "solr healthcheck -c core-x"]
+      interval: 5s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+  data_loader:
+      build: ./lss_solr_configs/solrCloud_embedded_zooKeeper
+      entrypoint: [ "/bin/sh", "-c", "curl 'http://solr-lss-dev:8983/solr/core-x/update?commit=true' --data-binary @/var/solr/data/core-data.json -H 'Content-type:application/json'" ]
+      volumes:
+        - solr_data:/var/solr/data
+      depends_on:
+        solr-lss-dev:
+          condition: service_healthy`
+
+You might add the volume solr_data to the list of volume.
+
+Option 3: Solr 8.11.2 Set up Solr and an external Zookeeper ensemble
+
+Have authentication, it is the better option for production environment, it is more verbose the integration in babel-local-dev repository
 
 ## How to start up the Solr cloud server, create core-x collection and index documents
 

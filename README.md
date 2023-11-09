@@ -3,7 +3,9 @@ Configuration files for HT full-text search (ls) Solr
 
 ## What is the problem we are trying to solve
 
-These files customize Solr for HT full-text search for Solr 6. Our very large indexes require significant changes to Solr defaults in order to work.  We also have custom indexing to deal with multiple languages, and very large documents.
+These files customize Solr for HT full-text search for Solr 6 and 8 and in standalone and cloud mode. 
+Our very large indexes require significant changes to Solr defaults in order to work.  
+We also have custom indexing to deal with multiple languages, and very large documents.
 
 ## [Legacy] Overview Solr 6 
 
@@ -38,21 +40,24 @@ of the cores.
   indexing servers should use the core-specific version in the 
   `indexing_core_specific` directory.
 
+### How to start up the Solr 6 server in a standalone mode
+
+* Launch Solr server
+  * `cd solr6_standalone`
+  * `docker-compose -f docker-compose_solr6_standalone.yml up`
+
+* Stop Solr server
+  * `docker-compose -f docker-compose_solr6_standalone down` 
+
+* Go inside the Solr container
+  * `docker exec -it solr-lss-dev-8 /bin/bash`
+
 If you are using Apple Silicon M1 chip, you will get this error -no matching manifest for Linux/arm64/v8 in the 
 manifest list entries-. To fix it, just add this platform in the docker-compose.yml file as shown below:
 
 `platform: linux/amd64`
 
-Launch Solr server
-`cd solr6_standalone`
-`docker-compose -f docker-compose_solr6_standalone.yml up`
-
-Stop Solr server
-`docker-compose -f docker-compose_solr6_standalone down` 
-
-`docker exec -it solr-lss-dev-8 /bin/bash`
-
-#### How to integrate in babel-local-dev
+#### How to integrate it in babel-local-dev
 
 Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
 following specifications:
@@ -72,45 +77,44 @@ following specifications:
 
 # Overview Solr 8.11.2 in standalone mode
 
+* Solr8.11.2 is the latest version of the 8.x series
+* 
 
 ### Upgrading our index from Solr6 to Solr8.11.2 (the last version)
 
 A Solr configuration for full-text search consists of creating a directory (solrdata) that contains all the 
 files and directories Solr needs to start up the server in standalone mode and with one core (core-x).
 
-In this first iteration, minimal changes were made on JAR files, Solr schemas and config files. The main goal was to 
-re-use the previous set-up with the Solr 8.
+To set up Solr 8, the same logic and resources used with Solr 6 was reused, then, minimal changes were made on JAR files, 
+Solr schemas and config files.
 
-    See below the follow steps to upgrade the Solr version.
-1) **Create a DockerFile to generate the image **Solr:8.11.2** is based image used**.
+See below the followed steps to upgrade the server from Solr 6 to Solr 8.
+
+1) **Create a DockerFile to generate our own image. **Solr:8.11.2** was the image used**.
 
 - (DockerFile) To Solr recognize the cores, a directory with the core name, should be created inside** 
 the /var/solr/data folder. Inside each core directory, should be added:
   - solrconfig.xml (configuration file with the most parameters affecting Solr itself) 
   The solrconfig.xml file is located in the conf/ directory for each collection or core 
   - data directory 
-  - core.properties -- Solr cores are configured by placing a file named core.properties in a sub-directory 
+  - core.properties -- Solr cores are configured by placing a file named core.properties in a subdirectory 
   under solr.home. Each core has to be the core.properties field 
   - conf directory 
   - lib directory (All the used JARS must add into lib directory)
-- **(DockerFile) Inside /var/sorl/data folder should be added the file solr.xml**
+- **(DockerFile) In /var/sorl/data directory should be added the file solr.xml**
 
 2) **Copy some of the Java JARS that was already generated in Catalog**
    - icu4j-62.1.jar 
    - lucene-analyzers-icu-8.2.0.jar 
    - lucene-umich-solr-filters-3.0-solr-8.8.2.jar 
 
-3) **Upgrading the JAR: HTPostingsFormatWrapper** (Check [here](https://github.com/hathitrust/lss_java_code/tree/master) to see all the steps to generate this JAR)
+3) **Upgrading the JAR: HTPostingsFormatWrapper** (Check [here](https://github.com/hathitrust/lss_java_code/tree/master) to see all the steps to re-generate this JAR)
 
 4) **Updating schema.xml**
 
-* _root_ field is type=int in solr6 and type=string in Solr8. In Solr 8 _root_ field must be defined using the exact same fieldType as the uniqueKey field (id) uses: string
+* _root_ field is type=int in Solr6 and type=string in Solr8. In Solr 8 _root_ field must be defined using the exact same fieldType as the uniqueKey field (id) uses: string
 
 5) **Create a docker-compose file to start up Solr server and for indexing data**.
-
-The JSON file core-data.json (/solr_json_documents) contains 1.978 generated using the python workflow. These documents are a sample of 
-the documents indexed in [catalog image](https://github.com/hathitrust/hathitrust_catalog_indexer).
-
 
 ### How to start up the Solr server in a standalone mode
 
@@ -119,7 +123,7 @@ the documents indexed in [catalog image](https://github.com/hathitrust/hathitrus
 * Use the docker-compose file for starting up the Solr server and for indexing data
   * `docker-compose -f docker-compose_solr8_standalone_mode.yml up`
 
-#### How to integrate in babel-local-dev
+#### How to integrate it in babel-local-dev
 
 Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
 following specifications:
@@ -150,21 +154,28 @@ following specifications:
 
 # Overview Solr 8.11.2 in cloud mode: 
 
+* In the first iteration, the SolrCloud is a single replica and a single shard
+* The server was set up combining Solr, ZooKeeper and Docker
+* For development, the Solr instance also have an embedded ZooKeeper server
+* For production, we should use external ZooKeeper server
+
 ### Upgrading our index from Solr6 to Solr8.11.2 (the last version)
 
 A solrCloud configuration for full-text search consists on a Solr cluster with a single node and a single Zookeeper. Two different
 architecture has tested to set up solr in cloud mode.
 
-* Option 1: Solr 8.11.2 Solr’s embedded ZooKeeper instance
-* Option 2: Solr 8.11.2 Set up Solr and an external Zookeeper ensemble
+* Option 1: Version 8.11.2 Solr’s embedded ZooKeeper instance
+* Option 2: Version 8.11.2 Solr and an external Zookeeper ensemble
 
-
-### Solr 8.11.2 Solr’s embedded ZooKeeper instance
+### Solr 8.11.2 and embedded ZooKeeper instance
 
 * Using Solr’s embedded ZooKeeper instance is fine for getting started, development stages
-* This set-up is not use in production because, the Solr instance also host Zookeeper, then if Solr shuts down, Zookeeper is also shut down. 
+* This set-up is not use in production because, the Solr instance also host Zookeeper, then if Solr shuts down, 
+Zookeeper is also shut down. 
 Any shards or Solr instances that rely on it will not be able to communicate with it or each other. 
 * It is the best alternative if you want to integrate SolrCloud 8 in babel-local-dev repository
+* A [ZooKeeper Command Line Interface](https://solr.apache.org/guide/solr/latest/deployment-guide/zookeeper-utilities.html) 
+was used to configure our own collections
 
     #### How to start up the Solr server
 
@@ -179,7 +190,7 @@ Any shards or Solr instances that rely on it will not be able to communicate wit
     * Push the image to use it in different projects
       * `docker image push ghcr.io/hathitrust/full-text-cloud-embedded_zookeeper:example_8.11`
     
-    #### How to integrate in babel-local-dev
+    #### How to integrate it in babel-local-dev
 
     Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
 following specifications
@@ -211,26 +222,29 @@ following specifications
 
 You might add the volume solr_data to the list of volume.
  
-### Solr 8.11.2 Set up Solr and an external Zookeeper ensemble
+### Solr 8.11.2 and an external Zookeeper ensemble
 
 * This is the recommended architecture for production environment
-* In our soluction authentication is applied
+* In our solution authentication is applied
 * The integration in babel-local-dev repository is more verbose
-* No docker image is generate becuase several service are running inside the docker
+* No docker image is generate because several service are running inside the docker
+* In the docker-compose file, the address (a string) where ZooKeeper is running is defined, this way Solr is able 
+to connect to ZooKeeper server 
+* Use [Solr API](https://solr.apache.org/guide/8_11/collections-api.html) for creating and set up the collection
 
     #### How to start up the Solr server
 
 The docker starts up a Solr server without collections, then the script collection_manager.sh should be executed to create 
-the collection and index documents in the index.
+the collection and index documents in the Solr server.
 
 * Execute the container: 
   * `docker compose -f docker-compose_external_zooKeeper.yml up`
 
-* Run an script for creating collection and indexing data
+* Run a script for creating collection and indexing data
   * `cd solrCloud_external_zooKeeper`
   * `docker exec solr1 /var/solr/data/collection_manager.sh`
 
-    #### How to integrate in babel-local-dev
+    #### How to integrate it in babel-local-dev
 
 Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
 following specifications
@@ -287,6 +301,11 @@ You might add the volume following list of volume to the docker-compose file.
 * and to create the collection and index documents in full-text search server use the command below
   * `docker exec solr-lss-dev /var/solr/data/collection_manager.sh`
 
+## Create a JSON file for indexing data
+
+The JSON file core-data.json (/solr_json_documents) contains 1.978 generated using the python workflow. These documents are a sample of 
+the documents indexed in [catalog image](https://github.com/hathitrust/hathitrust_catalog_indexer).
+
 
 ## Useful commands
 
@@ -309,16 +328,32 @@ You might add the volume following list of volume to the docker-compose file.
 
 * Export JSON file with index documents
   * `curl "http://localhost:8983/solr/core-x/select?q=*%3A*&wt=json&indent=true&start=0&rows=2000000000&fl=*" > full-output-of-my-solr-index.json`
+ 
+* Below one can be used through browser to delete documents from Solr index:
+  * `http://host:port/solr/collection_name/update?commit=true&stream.body=<delete><query>*:*</query></delete>`
 
-Below one can be used through browser:
+### Pending & Next steps
 
-`http://host:port/solr/collection_name/update?commit=true&stream.body=<delete><query>*:*</query></delete>`
+* [Otimization] To simplify the dokerization logic some directories have been duplicated in the different directories to
+set up Solr cloud. We could check how the common directories could be added in the root of the repository and re-use
+them in the docker files.
 
 ## Deployment and Use
 
+Go to section `How to integrate it in babel-local-dev` to see how to integrate each Solr server into another application.
+
 ### Re-Indexing
 
-Notes about customizing solrconfig.xml go here
+* To solve the issue below, the solrconfig.xml file was updated to enable the updateLog option.
+
+```ERROR org.apache.solr.cloud.SyncStrategy – No UpdateLog found - cannot sync```
+
+* In the Solr cloud logs with embedded ZooKeeper you could see the issue below. That is more of a warning than error, and 
+it appears because we are running only one ZK in standalone mode. More details of this
+message [here](https://hathitrust.atlassian.net/wiki/spaces/HAT/pages/edit-v2/2661482577).
+
+```Invalid configuration, only one server specified (ignoring)```
+
 ### Testing
 ### Deployment to Production
 ### Production Indexing

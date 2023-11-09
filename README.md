@@ -101,7 +101,7 @@ the documents indexed in [catalog image](https://github.com/hathitrust/hathitrus
 Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
 following specifications:
 
-```
+````
   solr-lss-dev:
     container_name: solr-lss-dev
     healthcheck:
@@ -123,7 +123,7 @@ following specifications:
     depends_on:
       solr-lss-dev:
         condition: service_healthy
-```
+````
 
 # Overview Solr 8.11.2 in cloud mode: 
 
@@ -316,3 +316,10 @@ This may need a separate document on confluence.  Think about it...
 
 
 ## Links to more background
+
+* [docker solr examples](https://github.com/docker-solr/docker-solr-examples/tree/master/custom-configset): https://github.com/docker-solr/docker-solr-examples/tree/master/custom-configset
+* [SolrCloud & Catalog indexing](https://github.com/mlibrary/catalog-browse-indexing/blob/main/docker-compose.yml)
+* [SolrCloud + ZooKeeper external server & data persistence](https://github.com/samuelrac/solr-cloud)
+* [Our documentation with more information](https://hathitrust.atlassian.net/wiki/spaces/HAT/pages/edit-v2/2661482577)
+* [An example of SolrCloud in Catalog](https://github.com/hathitrust/hathitrust_catalog_indexer/blob/main/README.md)
+* 

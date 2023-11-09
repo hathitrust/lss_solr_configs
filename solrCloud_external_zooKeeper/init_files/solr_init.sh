@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# A ZooKeeper Command Line Interface (CLI) script is used to interact directly with Solr configuration files stored in ZooKeeper.
+# The upconfig command is used to upload the core configuration to ZooKeeper, this way we ensure that all collections
+# using that configuration (throughout the Cloud, on all the servers) have that specific config.
+# So you only need to upload it once, on one server.
+
 # enables solr to start with basic auth turned on
 solr zk cp /var/solr/data/security.json zk:security.json -z zoo1:2181
 

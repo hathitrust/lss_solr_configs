@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  full-text-search-standalone:
+    container_name: full-text-search-standalone
+    healthcheck:
+        test: [ "CMD", "/usr/bin/curl", "-s", "-f", "http://full-text-search-standalone:8983/solr/core-x/admin/ping" ]
+        interval: 5s
+        timeout: 10s
+        start_period: 30s
+        retries: 5
+    build: ./solr_standalone_mode
+    ports:
+      - "8983:8983"
+    volumes:
+      - ${PWD}/solr_standalone_mode/solrdata:/var/solr/data
+  data_loader:
+    build: ./solr_standalone_mode
+    entrypoint: ["/bin/sh", "-c", "curl 'http://full-text-search-standalone:8983/solr/core-x/update?commit=true' --data-binary @solrdata/core-data.json -H 'Content-type:application/json'"]
+    volumes:
+      - ${PWD}/solr_standalone_mode/solrdata:/var/solr/data
+    depends_on:
+      full-text-search-standalone:
+        condition: service_healthy
+volumes:
+  solrdata:

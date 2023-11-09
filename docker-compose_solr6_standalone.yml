@@ -1,0 +1,13 @@
+---
+version: '3'
+
+services:
+  solr-lss-dev:
+    image: solr:6
+    ports:
+      - "8983:8983"
+    volumes:
+      - ./solr6_standalone/lss-dev/core-x:/opt/solr/server/solr/core-x
+      - ./solr6_standalone/lss-dev/core-y:/opt/solr/server/solr/core-y
+      - ./solr6_standalone:/opt/lss_solr_configs
+      - ./solr6_standalone/lib:/opt/solr/server/solr/lib

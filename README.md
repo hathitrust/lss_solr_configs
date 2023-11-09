@@ -38,14 +38,37 @@ of the cores.
   indexing servers should use the core-specific version in the 
   `indexing_core_specific` directory.
 
+If you are using Apple Silicon M1 chip, you will get this error -no matching manifest for Linux/arm64/v8 in the 
+manifest list entries-. To fix it, just add this platform in the docker-compose.yml file as shown below:
+
+`platform: linux/amd64`
+
 Launch Solr server
-`docker-compose -f lss-dev/docker-compose.yml up`
+`cd solr6_standalone`
+`docker-compose -f docker-compose_solr6_standalone.yml up`
 
 Stop Solr server
-`docker-compose -f lss-dev/docker-compose.yml down` 
+`docker-compose -f docker-compose_solr6_standalone down` 
 
 `docker exec -it solr-lss-dev-8 /bin/bash`
 
+#### How to integrate in babel-local-dev
+
+Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
+following specifications:
+
+```solr-lss-dev:
+    image: solr:6.6.6-alpine
+    ports:
+      - "8983:8983"
+    user: ${CURRENT_USER}
+    volumes:
+      - ${BABEL_HOME}/lss_solr_configs/solr6_standalone/lss-dev/core-x:/opt/solr/server/solr/core-x
+      - ${BABEL_HOME}/lss_solr_configs/solr6_standalone/lss-dev/core-y:/opt/solr/server/solr/core-y
+      - ${BABEL_HOME}/lss_solr_configs/solr6_standalone:/opt/lss_solr_configs
+      - ${BABEL_HOME}/lss_solr_configs/solr6_standalone/lib:/opt/solr/server/solr/lib
+      - ${BABEL_HOME}/logs/solr:/opt/solr/server/logs
+ ```
 
 # Overview Solr 8.11.2 in standalone mode
 

@@ -31,19 +31,19 @@
     <field name="ht_heldby_brlm" type="string" indexed="true" stored="true" multiValued="true"/>
 
     <!-- fields for internal testing/debugging -->
-    <field name="numPages" type="tint" stored="true" indexed="true"/>
-    <field name="numChars" type="tint" stored="true" indexed="true"/>
-    <field name="charsPerPage" type="tint" stored="true" indexed="true"/>
+    <!-- <field name="numPages" type="tint" stored="true" indexed="true"/> -->
+    <!-- <field name="numChars" type="tint" stored="true" indexed="true"/> -->
+    <!-- <field name="charsPerPage" type="tint" stored="true" indexed="true"/> -->
 
     <!-- unused seq, pgnum fields for SLIP consistency -->
-    <field name="seq"       type="int"           indexed="true" stored="true" multiValued="false" required="false"/>
-    <field name="pgnum"     type="string"        indexed="true" stored="true" multiValued="false" required="false"/>
+    <!-- <field name="seq"       type="int"           indexed="true" stored="true" multiValued="false" required="false"/> -->
+    <!-- <field name="pgnum"     type="string"        indexed="true" stored="true" multiValued="false" required="false"/> -->
 
     <!-- fields for block-join, not to be populated in production -->
-    <field name="type_s" type="string" indexed="true" stored="true"/>
-    <field name="chunk_seq" type="int" indexed="true" stored="true"/>
+    <!-- <field name="type_s" type="string" indexed="true" stored="true"/> -->
+    <!-- <field name="chunk_seq" type="int" indexed="true" stored="true"/> -->
     <!-- this is a magic field populated by Solr during block-join indexing-->
-    <field name="_root_" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="_root_" type="string" indexed="true" stored="false" multiValued="false"/>
 
 
     <!-- full text field with bigramming for CJK-->
@@ -137,7 +137,7 @@
   <copyField source="lccn" dest="lccn_dv"/>
 
 
-  <field name="ctrlnum"      type="exactmatcher"   indexed="true" stored="true"  multiValued="true"/>
+  <!-- <field name="ctrlnum"      type="exactmatcher"   indexed="true" stored="true"  multiValued="true"/> -->
   <field name="rptnum"       type="exactmatcher"   indexed="true" stored="true"  multiValued="true"/>
   <field name="sdrnum"       type="exactmatcher"   indexed="true" stored="true"  multiValued="true"/>
 
@@ -266,18 +266,18 @@
    <field name="topicStr_dv"    type="string"     indexed="true" stored="false"  multiValued="true" docValues="true"/>
 
 
-   <field name="fullgenre"   type="text"       indexed="true" stored="false"  multiValued="true"  omitNorms="true"/>
+   <!-- <field name="fullgenre"   type="text"       indexed="true" stored="false"  multiValued="true"  omitNorms="true"/> -->
    <field name="genre"       type="text"       indexed="true" stored="false"  multiValued="true"  omitNorms="true"/>
    <field name="genreStr"    type="string"     indexed="true" stored="false" multiValued="true"                   />
 
-   <field name="hlb3"    type="text"       indexed="true" stored="false" multiValued="true"  omitNorms="true" />
-   <field name="hlb3Str" type="string"     indexed="true" stored="false" multiValued="true"                   />
-   <field name="hlb3Delimited" type="string" indexed="true" stored="true" multiValued="true" termVectors="false"/>
+   <!-- <field name="hlb3"    type="text"       indexed="true" stored="false" multiValued="true"  omitNorms="true" /> -->
+   <!-- <field name="hlb3Str" type="string"     indexed="true" stored="false" multiValued="true"                   /> -->
+   <!-- <field name="hlb3Delimited" type="string" indexed="true" stored="true" multiValued="true" termVectors="false"/> -->
    <!-- XXX tbw insert hlb variations here -->
-   <field name="hlb3indexPath" type="descendent_path" indexed="true" stored="true" multiValued="true" termVectors="false"/>
-   <field name="hlb3queryPath" type="ancestor_path" indexed="true" stored="true" multiValued="true" termVectors="false"/>
-   <copyField source="hlb3Delimited" dest="hlb3indexPath"/>
-   <copyField source="hlb3Delimited" dest="hlb3queryPath"/>
+   <!--<field name="hlb3indexPath" type="descendent_path" indexed="true" stored="true" multiValued="true" termVectors="false"/> -->
+   <!-- <field name="hlb3queryPath" type="ancestor_path" indexed="true" stored="true" multiValued="true" termVectors="false"/> -->
+   <!-- <copyField source="hlb3Delimited" dest="hlb3indexPath"/> -->
+   <!-- <copyField source="hlb3Delimited" dest="hlb3queryPath"/> -->
 
    <copyField source="topicStr" dest="topicStr_dv"/>
    <!-- reversed from vuFind these since only topicStr is stored-->
@@ -285,7 +285,7 @@
    <copyField source="topicStr" dest="topicProper"/>
 
    <!-- copyField source="hlb_both" dest="hlb_bothStr"/ -->
-   <copyField source="hlb3Str" dest="hlb3" />
+   <!-- <copyField source="hlb3Str" dest="hlb3" /> -->
    <copyField source="genre" dest="genreStr"/>
 
 
@@ -328,7 +328,7 @@
    <field name="geographic"       type="text"   indexed="true" stored="false" multiValued="true"  omitNorms="true"/>
    <field name="geographicStr"    type="string" indexed="true" stored="false" multiValued="true"/>
    <!-- <field name="subgeographic" type="text" indexed="true" stored="true"  multiValued="true"/> -->
-    <field name="fullgeographic" type="text" indexed="true" stored="false" multiValued="true" omitNorms="true"/>
+   <!-- <field name="fullgeographic" type="text" indexed="true" stored="false" multiValued="true" omitNorms="true"/> -->
 
    <field name="country_of_pub"   type="text"   indexed="true" stored="false" multiValued="true"  omitNorms="true"/>
    <field name="countryOfPubStr"  type="string" indexed="true" stored="true" multiValued="true"/>

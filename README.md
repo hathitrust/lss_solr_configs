@@ -180,7 +180,20 @@ was used to configure our own collections
 
     * Execute the container: 
       * `docker compose -f docker-compose_embedded_zooKeeper.yml up`
-     
+    
+    * The docker-compose file, will create images for Solr and to index data, you can push the images to the registry repository
+      * Solr: 
+        * Associate the local image with the image to register 
+          * `docker image tag full-text-search-embedded_zoo:latest ghcr.io/hathitrust/full-text-search-embedded_zoo:example-8.11`
+        * Push the image
+          * `docker image push ghcr.io/hathitrust/full-text-search-embedded_zoo:example-8.11`
+      * Data loader:
+        * Associate the local image with the image to register 
+          * `docker image tag lss_solr_configs-data_loader:latest ghcr.io/hathitrust/lss_solr_configs-data_loader:example-8.11`
+        * Push the image
+          * `docker image push ghcr.io/hathitrust/lss_solr_configs-data_loader:example-8.11`
+
+
     #### How to integrate it in babel-local-dev
 
     Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
@@ -213,6 +226,31 @@ following specifications
       depends_on:
         solr-lss-dev:
           condition: service_healthy
+```
+  #### How to integrate with python full-text search indexer workflow using the images
+
+```solr-lss-dev:
+    image: ghcr.io/hathitrust/full-text-search-embedded_zoo:example-8.11
+    container_name: solr-lss-dev
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr_data:/var/solr/data
+    command: solr-foreground -c
+    healthcheck:
+      test: [ "CMD-SHELL", "solr healthcheck -c core-x" ]
+      interval: 5s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+  #data_loader: # It is probably for this application I should create the image first
+  #  image: ghcr.io/hathitrust/lss_solr_configs-data_loader:data_loader_example-8.11
+  #  entrypoint: [ "/bin/sh", "-c", "curl 'http://solr-lss-dev:8983/solr/core-x/update?commit=true' --data-binary @/var/solr/data/core-data.json -H 'Content-type:application/json'" ]
+  #  volumes:
+  #    - solr_data:/var/solr/data
+  #  depends_on:
+  #    solr-lss-dev:
+  #      condition: service_healthy
 ```
 
 You might add the volume solr_data to the list of volume.

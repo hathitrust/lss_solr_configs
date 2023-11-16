@@ -1,9 +1,12 @@
 version: '3'
 
 services:
-  solr1:
-    build: ./solrCloud_external_zooKeeper
-    container_name: solr1
+  full-text-search-external_zoo:
+    image: full-text-search-external_zoo
+    container_name: full-text-search-external_zoo
+    build:
+      context: ./solr8.11.2_files
+      target: external_zookeeper
     ports:
      - "8983:8983"
     environment:

@@ -1,9 +1,12 @@
 version: '3'
 
 services:
-  solr1:
+  full-text-search-embedded_zoo:
     image: full-text-search-embedded_zoo
     container_name: full-text-search-embedded_zoo
+    build:
+      context: ./solr8.11.2_files
+      target: embedded_zookeeper
     ports:
      - "8983:8983"
     volumes:
@@ -15,13 +18,15 @@ services:
       timeout: 10s
       start_period: 30s
       retries: 5
-  data_loader:
-      build: solrCloud_embedded_zooKeeper
+  data_loader: # It is probably for this application I should create the image first
+      build:
+        context: ./solr8.11.2_files
+        target: embedded_zookeeper
       entrypoint: [ "/bin/sh", "-c", "curl 'http://full-text-search-embedded_zoo:8983/solr/core-x/update?commit=true' --data-binary @/var/solr/data/core-data.json -H 'Content-type:application/json'" ]
       volumes:
         - solr_data:/var/solr/data
       depends_on:
-        solr1:
+        full-text-search-embedded_zoo:
           condition: service_healthy
 volumes:
   solr_data:

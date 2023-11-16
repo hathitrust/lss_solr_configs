@@ -26,7 +26,6 @@ and `solrconfig.xml` via a standard XML `<!ENTITY <name> SYSTEM "./<relative_fil
 This allows us to have a single base file that can be modified just by
 putting a symlink to the right file in the conf directory.
 
-
 * `similarity.xml` contains directives to use either the tfidf or BM25 similarity
 scores and are stored in the corresponding directories. We've
 been linking the tfidf file into `core-#x` and the BM25 into `core-#y` for each
@@ -118,10 +117,8 @@ the /var/solr/data folder. Inside each core directory, should be added:
 
 ### How to start up the Solr server in a standalone mode
 
-* Create the Image using the Dockerfile 
-  * `docker build -t solr-text-search-8-standalone solr_standalone_mode`
 * Use the docker-compose file for starting up the Solr server and for indexing data
-  * `docker-compose -f docker-compose_solr8_standalone_mode.yml up`
+  * `docker compose -f docker-compose_solr8_standalone_mode.yml up`
 
 #### How to integrate it in babel-local-dev
 
@@ -137,16 +134,18 @@ following specifications:
         timeout: 10s
         start_period: 30s
         retries: 5
-    build: ./lss_solr_configs/solr_standalone_mode
+    build:
+       context: ./lss_solr_configs/solr8.11.2_files
+       target: standalone
     ports:
       - "8983:8983"
     volumes:
-      - ${PWD}/lss_solr_configs/solr_standalone_mode/solrdata:/var/solr/data
+      - solr_data:/var/solr/data
   data_loader:
-    build: ./lss_solr_configs/solr_standalone_mode
-    entrypoint: ["/bin/sh", "-c", "curl 'http://solr-lss-dev:8983/solr/core-x/update?commit=true' --data-binary @solrdata/core-data.json -H 'Content-type:application/json'"]
+    build: ./lss_solr_configs/solr8.11.2_files
+    entrypoint: ["/bin/sh", "-c", "curl 'http://solr-lss-dev:8983/solr/core-x/update?commit=true' --data-binary @/var/solr/data/core-data.json -H 'Content-type:application/json'"]
     volumes:
-      - ${PWD}/lss_solr_configs/solr_standalone_mode/solrdata:/var/solr/data
+      - solr_data:/var/solr/data
     depends_on:
       solr-lss-dev:
         condition: service_healthy
@@ -179,26 +178,20 @@ was used to configure our own collections
 
     #### How to start up the Solr server
 
-    * Build an image: 
-      * `docker build -t full-text-search-embedded_zoo solrCloud_embedded_zooKeeper`
     * Execute the container: 
       * `docker compose -f docker-compose_embedded_zooKeeper.yml up`
-    
-    * Build the image in the repository
-      * `docker build -t ghcr.io/hathitrust/full-text-cloud-embedded_zookeeper:example_8.11 solrCloud_embedded_zooKeeper`
-    
-    * Push the image to use it in different projects
-      * `docker image push ghcr.io/hathitrust/full-text-cloud-embedded_zookeeper:example_8.11`
-    
+     
     #### How to integrate it in babel-local-dev
 
     Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
 following specifications
 
 ```solr-lss-dev:
-    image: ghcr.io/hathitrust/full-text-cloud-embedded_zookeeper:example_8.11 
-    #build: ./lss_solr_configs/solrcloud_setup #solrcloud_setup/.
+    image: solr-lss-dev
     container_name: solr-lss-dev
+    build:
+      context: ./lss_solr_configs/solr8.11.2_files
+      target: embedded_zookeeper
     ports:
      - "8983:8983"
     volumes:
@@ -210,8 +203,10 @@ following specifications
       timeout: 10s
       start_period: 30s
       retries: 5
-  data_loader:
-      build: ./lss_solr_configs/solrCloud_embedded_zooKeeper
+  data_loader: # It is probably for this application I should create the image first
+      build:
+        context: ./lss_solr_configs/solr8.11.2_files
+        target: embedded_zookeeper
       entrypoint: [ "/bin/sh", "-c", "curl 'http://solr-lss-dev:8983/solr/core-x/update?commit=true' --data-binary @/var/solr/data/core-data.json -H 'Content-type:application/json'" ]
       volumes:
         - solr_data:/var/solr/data
@@ -241,8 +236,7 @@ the collection and index documents in the Solr server.
   * `docker compose -f docker-compose_external_zooKeeper.yml up`
 
 * Run a script for creating collection and indexing data
-  * `cd solrCloud_external_zooKeeper`
-  * `docker exec solr1 /var/solr/data/collection_manager.sh`
+  * `docker exec full-text-search-external_zoo /var/solr/data/collection_manager.sh`
 
     #### How to integrate it in babel-local-dev
 
@@ -252,6 +246,9 @@ following specifications
 ```solr-lss-dev:
     build: ./lss_solr_configs/solrCloud_external_zooKeeper
     container_name: solr-lss-dev
+    build:
+      context: ./lss_solr_configs/solr8.11.2_files
+      target: external_zookeeper
     ports:
      - "8983:8983"
     environment:

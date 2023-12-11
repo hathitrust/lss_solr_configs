@@ -4,33 +4,62 @@ name: Build Full Text Dev Index
 on:
   workflow_dispatch:
 
-# hathitrust/github_actions/build doesn't yet support multiplatform builds
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       -
         name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       -
         name: Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
       -
-        name: Build and push
-        uses: docker/build-push-action@v3
+        name: Build and push - solr 6, standalone
+        uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./solr6_standalone
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/hathitrust/lss-solr:unstable
           file: Dockerfile
+            
+      - name: Build and push - solr 8, standalone
+        uses: docker/build-push-action@v5
+        with:
+          context: ./solr8.11.2_files
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/hathitrust/full-text-search-solr:example-8.11
+          file: Dockerfile
+          target: standalone
+
+      - name: Build and push - solr 8, embedded zookeeper
+        uses: docker/build-push-action@v5
+        with:
+          context: ./solr8.11.2_files
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/hathitrust/full-text-search-embedded_zoo:example-8.11
+          file: Dockerfile
+          target: embedded_zookeeper
+            
+      - name: Build and push - solr 8, external zookeeper
+        uses: docker/build-push-action@v5
+        with:
+          context: ./solr8.11.2_files
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/hathitrust/full-text-search-cloud:example-8.11
+          file: Dockerfile
+          target: external_zookeeper

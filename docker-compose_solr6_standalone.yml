@@ -3,7 +3,7 @@ version: '3'
 
 services:
   solr-lss-dev:
-    image: solr:6
+    image: solr:6.6.6-alpine
     ports:
       - "8983:8983"
     volumes:

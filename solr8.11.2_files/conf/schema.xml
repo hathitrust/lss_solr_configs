@@ -2,7 +2,7 @@
 
 <!DOCTYPE schema 
 [
-  <!ENTITY similarity SYSTEM "tfidf/similarity.xml">
+  <!ENTITY similarity SYSTEM "BM25/similarity.xml">
 ]>
 
 <schema name="schema6_tfidf_wiDVmondo $Id: schema6_tfidf_wiDVmondo.xml,v 1.1 2018/06/06 20:52:46 tburtonw Exp tburtonw $" version="1.6">

@@ -42,7 +42,6 @@ of the cores.
 ### How to start up the Solr 6 server in a standalone mode
 
 * Launch Solr server
-  * `cd solr6_standalone`
   * `docker-compose -f docker-compose_solr6_standalone.yml up`
 
 * Stop Solr server
@@ -128,27 +127,23 @@ following specifications:
 ````
   solr-lss-dev:
     container_name: solr-lss-dev
+    image: solr-lss-dev
+    build:
+        context: ./lss_solr_configs
+        dockerfile: ./solr8.11.2_files/Dockerfile
+        target: standalone
     healthcheck:
         test: [ "CMD", "/usr/bin/curl", "-s", "-f", "http://solr-lss-dev:8983/solr/core-x/admin/ping" ]
         interval: 5s
         timeout: 10s
         start_period: 30s
         retries: 5
-    build:
-       context: ./lss_solr_configs/solr8.11.2_files
-       target: standalone
     ports:
       - "8983:8983"
     volumes:
       - solr_data:/var/solr/data
-  data_loader:
-    build: ./lss_solr_configs/solr8.11.2_files
-    entrypoint: ["/bin/sh", "-c", "curl 'http://solr-lss-dev:8983/solr/core-x/update?commit=true' --data-binary @/var/solr/data/core-data.json -H 'Content-type:application/json'"]
-    volumes:
-      - solr_data:/var/solr/data
-    depends_on:
-      solr-lss-dev:
-        condition: service_healthy
+volumes:
+  solr_data:
 ````
 
 # Overview Solr 8.11.2 in cloud mode: 
@@ -200,32 +195,22 @@ was used to configure our own collections
 following specifications
 
 ```solr-lss-dev:
-    image: solr-lss-dev
-    container_name: solr-lss-dev
-    build:
-      context: ./lss_solr_configs/solr8.11.2_files
+   build:
+      context: ./lss_solr_configs
+      dockerfile: ./solr8.11.2_files/Dockerfile
       target: embedded_zookeeper
+    container_name: solr-lss-dev
     ports:
-     - "8983:8983"
+      - "8983:8983"
     volumes:
       - solr_data:/var/solr/data
     command: solr-foreground -c
     healthcheck:
-      test: ["CMD-SHELL", "solr healthcheck -c core-x"]
+      test: [ "CMD-SHELL", "solr healthcheck -c core-x" ]
       interval: 5s
       timeout: 10s
       start_period: 30s
       retries: 5
-  data_loader: # It is probably for this application I should create the image first
-      build:
-        context: ./lss_solr_configs/solr8.11.2_files
-        target: embedded_zookeeper
-      entrypoint: [ "/bin/sh", "-c", "curl 'http://solr-lss-dev:8983/solr/core-x/update?commit=true' --data-binary @/var/solr/data/core-data.json -H 'Content-type:application/json'" ]
-      volumes:
-        - solr_data:/var/solr/data
-      depends_on:
-        solr-lss-dev:
-          condition: service_healthy
 ```
   #### How to integrate with python full-text search indexer workflow using the images
 
@@ -243,14 +228,6 @@ following specifications
       timeout: 10s
       start_period: 30s
       retries: 5
-  #data_loader: # It is probably for this application I should create the image first
-  #  image: ghcr.io/hathitrust/lss_solr_configs-data_loader:data_loader_example-8.11
-  #  entrypoint: [ "/bin/sh", "-c", "curl 'http://solr-lss-dev:8983/solr/core-x/update?commit=true' --data-binary @/var/solr/data/core-data.json -H 'Content-type:application/json'" ]
-  #  volumes:
-  #    - solr_data:/var/solr/data
-  #  depends_on:
-  #    solr-lss-dev:
-  #      condition: service_healthy
 ```
 
 You might add the volume solr_data to the list of volume.
@@ -273,8 +250,10 @@ the collection and index documents in the Solr server.
 * Execute the container: 
   * `docker compose -f docker-compose_external_zooKeeper.yml up`
 
-* Run a script for creating collection and indexing data
-  * `docker exec full-text-search-external_zoo /var/solr/data/collection_manager.sh`
+The docker compose contains some services to:
+1) Start up the Solr and zookeeper server; 
+2) Create the collection and
+3) Index documents in the Solr server
 
     #### How to integrate it in babel-local-dev
 
@@ -282,11 +261,11 @@ Update _docker-compose.yml_ file inside babel directory replacing the service _s
 following specifications
 
 ```solr-lss-dev:
-    build: ./lss_solr_configs/solrCloud_external_zooKeeper
-    container_name: solr-lss-dev
-    build:
-      context: ./lss_solr_configs/solr8.11.2_files
+    build: 
+      context: ./lss_solr_configs
+      dockerfile: ./solr8.11.2_files/Dockerfile
       target: external_zookeeper
+    container_name: solr-lss-dev
     ports:
      - "8983:8983"
     environment:
@@ -316,6 +295,20 @@ following specifications
       - zookeeper1_data:/data
       - zookeeper1_datalog:/datalog
       - zookeeper1_wd:/apache-zookeeper-3.6.0-bin
+  collection_creator:
+    container_name: collection_creator
+    build:
+      context: ./lss_solr_configs
+      dockerfile: ./solr8.11.2_files/Dockerfile
+      target: external_zookeeper
+    entrypoint: [ "/bin/sh", "-c" ,"/var/solr/data/collection_manager.sh http://solr-lss-dev:8983"]
+    volumes:
+      - solr1_data:/var/solr/data
+    depends_on:
+      solr-lss-dev:
+        condition: service_healthy
+    networks:
+      - solr
 ```
 
 You might add the volume following list of volume to the docker-compose file.
@@ -335,6 +328,43 @@ You might add the volume following list of volume to the docker-compose file.
 
 * and to create the collection and index documents in full-text search server use the command below
   * `docker exec solr-lss-dev /var/solr/data/collection_manager.sh`
+  
+## How to index data using a sample of documents
+
+Follow the steps below for indexing a sample of documents in Solr server. 
+
+The sample of data is in `macc-ht-ingest-000.umdl.umich.edu:/htprep/fulltext_indexing_sample/data_sample.zip`
+
+* Download a zip file with a sample of documents to your local environment
+`scp macc-ht-ingest-000.umdl.umich.edu:/htprep/fulltext_indexing_sample/data_sample.zip ~/datasets` 
+
+* In your working directory,
+  * After starting up the Solr server inside the docker,
+  * run the script `./indexing_data.sh`. 
+  
+  The script will extract all the XML files inside the Zip file to a destine folder. Then, it will index the documents in Solr server. 
+The script input parameters are: solr_url, the path to the target folder to extract the files and the path to the zip file.
+  * e.g. `./indexing_data.sh http://localhost:8983 ~/mydata data_sample.zip`
+
+At the end of this process, your Solr server should have a sample of 150 documents.
+
+**Note**: If in the future we should automatize this process, a service to index documents could be included in the docker-compose. 
+You will have to add the data sample to the docker image or download it from a repository. See the example below as a reference
+
+```data_loader:
+    build:
+      context: ./lss_solr_configs
+      dockerfile: ./solr8.11.2_files/Dockerfile
+      target: external_zookeeper
+    entrypoint: [ "/bin/sh", "-c" ,"indexing_data.sh http://solr-lss-dev:8983" ]
+    volumes:
+      - solr1_data:/var/solr/data
+    depends_on:
+      collection_creator:
+        condition: service_completed_successfully
+    networks:
+      - solr
+```
 
 ## Create a JSON file for indexing data
 

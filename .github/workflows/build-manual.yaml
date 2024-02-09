@@ -36,7 +36,8 @@ jobs:
       - name: Build and push - solr 8, standalone
         uses: docker/build-push-action@v5
         with:
-          context: ./solr8.11.2_files
+          context: .
+          file: ./solr8.11.2_files/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/hathitrust/full-text-search-solr:example-8.11
@@ -45,7 +46,8 @@ jobs:
       - name: Build and push - solr 8, embedded zookeeper
         uses: docker/build-push-action@v5
         with:
-          context: ./solr8.11.2_files
+          context: .
+          file: ./solr8.11.2_files/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/hathitrust/full-text-search-embedded_zoo:example-8.11
@@ -54,7 +56,8 @@ jobs:
       - name: Build and push - solr 8, external zookeeper
         uses: docker/build-push-action@v5
         with:
-          context: ./solr8.11.2_files
+          context: .
+          file: ./solr8.11.2_files/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/hathitrust/full-text-search-cloud:example-8.11

@@ -5,7 +5,8 @@ services:
     image: full-text-search-external_zoo
     container_name: full-text-search-external_zoo
     build:
-      context: ./solr8.11.2_files
+      context: .
+      dockerfile: ./solr8.11.2_files/Dockerfile
       target: external_zookeeper
     ports:
      - "8983:8983"
@@ -20,6 +21,12 @@ services:
       - solr1_data:/var/solr/data
     command:
       - solr-foreground
+    healthcheck:
+      test: [ "CMD", "/usr/bin/curl", "-s", "-f", "http://full-text-search-external_zoo:8983/solr/#/admin/ping" ]
+      interval: 5s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
   zoo1:
     image: zookeeper:3.6
     container_name: zoo1
@@ -40,7 +47,20 @@ services:
       - zookeeper1_data:/data
       - zookeeper1_datalog:/datalog
       - zookeeper1_wd:/apache-zookeeper-3.6.0-bin
-
+  collection_creator:
+    container_name: collection_creator
+    build:
+      context: .
+      dockerfile: ./solr8.11.2_files/Dockerfile
+      target: external_zookeeper
+    entrypoint: [ "/bin/sh", "-c" ,"/var/solr/data/collection_manager.sh http://full-text-search-external_zoo:8983"]
+    volumes:
+      - solr1_data:/var/solr/data
+    depends_on:
+      full-text-search-external_zoo:
+        condition: service_healthy
+    networks:
+      - solr
 networks:
   solr:
 volumes:

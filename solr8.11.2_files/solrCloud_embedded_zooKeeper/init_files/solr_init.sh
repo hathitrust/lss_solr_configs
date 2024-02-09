@@ -15,4 +15,6 @@ echo "🌞 Creating collection"
 # uploads the configuration in the core-x directory and creates a collection
 solr create_collection -c core-x -d core-x/ -shards 1 -replicationFactor 1
 
+solr stop -p 8983
+
 cat /var/solr/logs/solr.log

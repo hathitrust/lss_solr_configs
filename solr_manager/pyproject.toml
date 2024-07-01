@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "lss-solr-configs"
+version = "0.1.0"
+description = ""
+authors = ["Lianet Sepulveda Torres <lisepul@umich.edu>"]
+readme = "README.md"
+packages = [{include = "lss_solr_configs"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pytest = "^8.3.2"
+requests = "^2.32.3"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.2.2"
+pytest = "^8.0.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

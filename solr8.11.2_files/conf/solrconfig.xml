@@ -247,8 +247,8 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
     </metrics>
   </indexConfig>
 
-
-  <jmx />
+<!--Lianet Aug 1 2024 Warning message: solrconfig.xml: <jmx> is no longer supported,&#8203; use solr.xml:/metrics/reporter section instead -->
+<!--  <jmx /> -->
 
   <!-- The default high-performance update handler -->
   <updateHandler class="solr.DirectUpdateHandler2">
@@ -319,7 +319,9 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
          be based on the last SolrCore to be initialized.
 
       -->
-    <maxBooleanClauses>2048</maxBooleanClauses>
+
+      <!-- Lianet Aug 1 2024 Warning message: solrconfig.xml: <maxBooleanClauses> of 2048 is greater than global limit of 1024 and will have no effect set maxBooleanClauses in solr.xml to increase global limit -->
+    <maxBooleanClauses>1024</maxBooleanClauses>
 
 
     <!-- Slow Query Threshold (in millis)

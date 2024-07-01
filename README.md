@@ -151,7 +151,20 @@ volumes:
 * In the first iteration, the SolrCloud is a single replica and a single shard
 * The server was set up combining Solr, ZooKeeper and Docker
 * For development, the Solr instance also have an embedded ZooKeeper server
-* For production, we should use external ZooKeeper server
+* For production, we should use an external ZooKeeper server
+
+To start up the Solr server in cloud mode, we mount the script init_files/solr_init.sh in the container 
+to allow setting up the authentication using a predefined security.json file.
+
+The script specifies the ZK_HOST environment variable to point to the ZooKeeper server. It also copies the 
+security.json file to ZooKeeper using the solr zk cp command. In the docker-compose file, each Solr container should
+run a command to start up the Solr in foreground mode. 
+
+In the container, we should define health checks to verify the Zookeeper and Solr are working well. These health checks
+will help us to define the dependencies between the services in the docker-compose file.
+
+If we do not use the health checks, we probably will have to use the scripts wait-for-solr.sh and wait-for-zookeeper.sh 
+to make sure the authentication is set up correctly.
 
 ### Upgrading our index from Solr6 to Solr8.11.2 (the last version)
 
@@ -232,83 +245,153 @@ following specifications
 
 You might add the volume solr_data to the list of volume.
  
-### Solr 8.11.2 and an external Zookeeper ensemble
+## Solr 8.11.2 and an external Zookeeper
 
 * This is the recommended architecture for production environment
-* In our solution authentication is applied
+* In our solution, authentication is applied
 * The integration in babel-local-dev repository is more verbose
-* No docker image is generate because several service are running inside the docker
+* No docker image is generated because some services are running inside the docker
 * In the docker-compose file, the address (a string) where ZooKeeper is running is defined, this way Solr is able 
 to connect to ZooKeeper server 
 * Use [Solr API](https://solr.apache.org/guide/8_11/collections-api.html) for creating and set up the collection
 
-    #### How to start up the Solr server
+To a better understanding of Solr and Zookeeper set up in a docker, see this [page](https://hathitrust.atlassian.net/wiki/spaces/HAT/pages/3190292502/Solr+cloud+and+external+Zookeeper+parameters).
 
-The docker starts up a Solr server without collections, then the script collection_manager.sh should be executed to create 
-the collection and index documents in the Solr server.
+### How to create the image for Solr and external Zookeeper    
 
-* Execute the container: 
-  * `docker compose -f docker-compose_external_zooKeeper.yml up`
+```
+cd lss_solr_configs
+export IMAGE_REPO=ghcr.io/hathitrust/full-text-search-external_zoo
+docker build . --file solr8.11.2_files/Dockerfile --target external_zookeeper --tag $IMAGE_REPO:ext_zoo_8.11.2
+docker image tag xt_zoo_8.11.2:latest ghcr.io/hathitrust/full-text-search-external_zoo:shards-8.11
+docker image push ghcr.io/hathitrust/full-text-search-external_zoo:shards-8.11
+```
 
-The docker compose contains some services to:
-1) Start up the Solr and zookeeper server; 
-2) Create the collection and
-3) Index documents in the Solr server
+If you are doing changes in the Dockerfile or in the solr_init.sh script it is better to create the image
+each time you run the docker-compose file instead of using the image in the repository.
 
-    #### How to integrate it in babel-local-dev
+Update the solr service adding the following lines:
+
+```build:
+    context: .
+    dockerfile: ./solr8.11.2_files/Dockerfile
+    target: external_zookeeper
+```
+
+You should use the created image in the docker-container to start up `full-text-search-external_zoo` service
+
+### How to start up the Solr server and use it to create the collection and configset
+
+This application uses the script solrCloud_external_zooKeeper/init_files/solr_init.sh to start up the Solr cluster
+with Basic authentication and uploading the configset used in the collection with fulltext documents.
+
+#### Command to start up the Solr cluster in cloud mode 
+  `docker compose -f docker-compose_external_zooKeeper.yml up`
+
+You will see the following services running in the docker:
+* full-text-search-external_zoo
+* zoo1
+
+You could use this option if you want to use Solr with any other application.
+
+#### Command to start up the Solr cluster in cloud mode and create the collection and configset
+
+The docker-compose (docker-compose_external_zooKeeper.yml) file contains additional services you can use with 
+Solr cluster if you start the docker using `--profile` option.
+
+* Use the command below to create the collection using core-x configset. 
+
+```
+export SOLR_PASSWORD='solr-admin-password'
+docker compose -f docker-compose_external_zooKeeper.yml --profile collection_creator up
+```
+
+`collection_creator` is a service that will create the collection `core-x` using the already 
+created configset `core-x`. The configset core-x is uploaded when Solr server starts up.
+To create collections, solr-admin-password is required; then it should be passed as an environment variable.
+
+* The following service will be created in the docker-compose file
+  * full-text-search-external_zoo
+  * zoo1
+  * collection_creator
+
+* Use the command below to start up the Solr cluster in cloud mode and manage Solr collections and configset using
+the python module solr_manager. Read solr_manager/README.md to see how to use this module.
+
+```
+docker compose -f docker-compose_external_zooKeeper.yml --profile solr_collection_manager up
+```
+
+#### How to integrate it in babel-local-dev
 
 Update _docker-compose.yml_ file inside babel directory replacing the service _solr-lss-dev_. Create a new one with the
 following specifications
 
 ```solr-lss-dev:
-    build: 
-      context: ./lss_solr_configs
-      dockerfile: ./solr8.11.2_files/Dockerfile
-      target: external_zookeeper
-    container_name: solr-lss-dev
-    ports:
-     - "8983:8983"
-    environment:
+     image: ghcr.io/hathitrust/full-text-search-external_zoo:shards-8.11
+     container_name: full-text-search-external_zoo
+     ports:
+      - "8983:8983"
+     environment:
       - ZK_HOST=zoo1:2181
-      - SOLR_OPTS=-XX:-UseLargePages 
+      - SOLR_OPTS=-XX:-UseLargePages
+    networks:
+      - solr
     depends_on:
-      - zoo1
+      zoo1:
+        condition: service_healthy
     volumes:
       - solr1_data:/var/solr/data
-    command:
-      - solr-foreground
+    command: # Solr command to start the container to make sure the security.json is created
+      - solr-foreground -c
+    healthcheck:
+      test: [ "CMD", "/usr/bin/curl", "-s", "-f", "http://full-text-search-external_zoo:8983/solr/#/admin/ping" ]
+      interval: 5s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
   zoo1:
-    image: zookeeper:3.6
+    image: zookeeper:3.8.0
     container_name: zoo1
     restart: always
     hostname: zoo1
     ports:
       - 2181:2181
+      - 7001:7000
     environment:
-      ZOO_MY_ID: 1 
+      ZOO_MY_ID: 1
       ZOO_SERVERS: server.1=zoo1:2888:3888;2181
       ZOO_4LW_COMMANDS_WHITELIST: mntr, conf, ruok
       ZOO_CFG_EXTRA: "metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000 metricsProvider.exportJvmInfo=true"
       ZOO_LOG_DIR: "/logs"
+    networks:
+      - solr
     volumes:
-      - zookeeper1_log:/logs
-      - zookeeper1_data:/data
-      - zookeeper1_datalog:/datalog
-      - zookeeper1_wd:/apache-zookeeper-3.6.0-bin
+      - zookeeper1_log:/logs # The log directory is used to store the Zookeeper logs
+      - zookeeper1_data:/data # The data directory is used to store the Zookeeper data
+      - zookeeper1_datalog:/datalog # The datalog directory is used to store the Zookeeper transaction logs
+    healthcheck:
+      test: [ "CMD", "/usr/bin/curl", "-s", "-f", "http://solr1:8983/solr/#/admin/ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   collection_creator:
     container_name: collection_creator
     build:
-      context: ./lss_solr_configs
+      context: .
       dockerfile: ./solr8.11.2_files/Dockerfile
       target: external_zookeeper
-    entrypoint: [ "/bin/sh", "-c" ,"/var/solr/data/collection_manager.sh http://solr-lss-dev:8983"]
+    entrypoint: [ "/bin/sh", "-c" ,"/var/solr/data/collection_manager.sh http://full-text-search-external_zoo:8983"]
     volumes:
       - solr1_data:/var/solr/data
     depends_on:
-      solr-lss-dev:
+      full-text-search-external_zoo:
         condition: service_healthy
     networks:
       - solr
+    profiles: [create_collections]
+    environment:
+      - SOLR_PASSWORD=$SOLR_PASSWORD
 ```
 
 You might add the volume following list of volume to the docker-compose file.

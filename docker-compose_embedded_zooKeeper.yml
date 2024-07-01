@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   full-text-search-embedded_zoo:
     image: full-text-search-embedded_zoo

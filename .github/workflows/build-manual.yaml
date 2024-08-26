@@ -62,3 +62,13 @@ jobs:
           push: true
           tags: ghcr.io/hathitrust/full-text-search-cloud:example-8.11
           target: external_zookeeper
+
+      - name: Build and push - solr 8, external zookeeper
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./solr8.11.2_files/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/hathitrust/full-text-search-cloud:shards-8.11
+          target: external_zookeeper_kubernetes

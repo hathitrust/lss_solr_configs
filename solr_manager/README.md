@@ -77,7 +77,7 @@ The project is divided into the following phases:
     ```
     docker-compose up -d solr_manager
     ```
-4. [Recommendation] Run the script `solr_manager/init_solr_manager.sh` to start the application and set up the environment variables.
+4. [Recommendation] Run the script `init_solr_manager.sh` to start the application and set up the environment variables.
     ```
     ./init_solr_manager.sh
     ```
@@ -128,7 +128,6 @@ solr_manager/
 ├── Dockerfile
 ├── README.md
 ├── docker-compose.yml
-├── init_solr_manager.sh
 ├── pyproject.toml
 ├── poetry.lock
 ├── .env
@@ -138,6 +137,7 @@ solr_manager/
 │   ├── solr_collection_manager_test.py
 └── solr_files/
     └── test_configset.zip
+init_solr_manager.sh
 ```
 
 As this project requires a Solr server to run, the `docker-compose.yml` file starts a 3 Solr containers
@@ -175,11 +175,11 @@ The application provides the following functionalities:
 
 ### Create a Collection
 ```
-docker exec -it solr_manager python solr_collection_manager.py --solr_url <solr_url> --action create_collection --name <collection_name>
+docker exec -it solr_manager python solr_collection_manager.py --solr_url <solr_url> --action create_collection --name <collection_name> --replication_factor <replication_factor>
 ```
 
 Example:
-```docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action create_collection --name new_collection```
+```docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action create_collection --name new_collection --replication_factor 1```
 
 The script that creates a collection also accepts the following optional arguments:
 - `--num_shards`: Number of shards (default: 1)
@@ -187,11 +187,12 @@ The script that creates a collection also accepts the following optional argumen
 - `--configset_name`: Configset name (default: _default)
 - `--max_shards_per_node`: Maximum number of shards per node (default: 1)
 
-In the command below you will see how to use the different parameters to create collections with different configurations:
+In the command below, 
+you will see how to use the different parameters to create collections with different configurations:
 
 ```
 docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action create_collection \
---name new_collection --num_shards 2 --maxShardsPerNode 3 --replication_factor 2 --configset_name conf
+--name new_collection --num_shards 1 --max_shards_per_node 1 --replication_factor 1 --configset_name conf
 ```
 
 The collection with the name `new_collection` will be created using the already created configset `conf` and the 
@@ -212,7 +213,7 @@ The script will return an error message:
 * if the Solr server is not running
 
 Example:
-```docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action delete_collection --name new_coll```
+```docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action delete_collection --name new_collection```
 
 ### List Collections
 ```
@@ -228,7 +229,7 @@ docker exec -it solr_manager python solr_collection_manager.py --solr_url <solr_
 ```
 
 Example:
-```docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action upload_configset --configset_name new_configset --path_configset solr_files/conf.zip```
+```docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action upload_configset --configset_name new_configset --path_configset tests/conf.zip```
 
 The script that uploads a configset will return an error message:
 * if the configset already exists.

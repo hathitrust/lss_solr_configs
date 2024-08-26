@@ -178,7 +178,7 @@ def main():
     parser.add_argument('--name', type=str, help='Name of the collection', required=False)
     parser.add_argument('--num_shards', type=int, help='Number of shards', required=False, default=1)
     parser.add_argument('--replication_factor', type=int, help='Replication factor', required=False,
-                        default=3)
+                        default=1)
     # Defining maxShardsPerNode sets a limit on the number of replicas the CREATE action will spread to each node.
     parser.add_argument('--max_shards_per_node', type=int, help='Number of shards', required=False,
                         default=1)

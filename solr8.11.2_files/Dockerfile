@@ -53,3 +53,14 @@ COPY --chown=solr:solr --chmod=0755 ./solr8.11.2_files/solrCloud_external_zooKee
 
 # Run this script to start solr as an entrypoint to configure the container to run as an executable
 ENTRYPOINT ["/usr/bin/solr_init.sh"]
+
+#=======================================================
+FROM common AS external_zookeeper_kubernetes
+# any steps specific to building the image with external zookeeper
+
+COPY --chown=solr:solr ./solr8.11.2_files/conf /opt/solr/core-x
+
+COPY --chown=solr:solr --chmod=0755 ./solr8.11.2_files/solrCloud_external_zooKeeper/init_files/solr_init.sh /usr/bin/solr_init.sh
+
+# Run this script to start solr as an entrypoint to configure the container to run as an executable
+# ENTRYPOINT ["/usr/bin/solr_init.sh"]

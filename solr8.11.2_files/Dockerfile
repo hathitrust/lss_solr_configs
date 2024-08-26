@@ -1,11 +1,18 @@
 FROM solr:8.11.2 AS common
 
-# any steps everything needs
+# Define the authentication type
+ENV SOLR_AUTH_TYPE="basic"
+ENV SOLR_AUTHENTICATION_OPTS="-Dbasicauth=solr:SolrRocks"
 
-#Copy a batch of xml files to the container
-#COPY --chown=solr:solr ./data_sample /var/solr/data/data_sample
+# -Dsolr.security.json= Let's solr know the location of the security.json file
+# -Denable.packages=true Enables the use of the packages feature
+# -Dsolr.cloud.client.stallTime=30000 Sets the time to wait for the connection to the zookeeper
+# -XX:-UseLargePages Disables the use of large pages, It gets rid of "shared memory" warnings
+# on Solr startup => https://solr.apache.org/guide/solr/latest/deployment-guide/docker-faq.html
+ENV SOLR_OPTS="-Denable.packages=true -Dsolr.cloud.client.stallTime=30000 -Dsolr.security.json=/opt/solr/security.json \
+-XX:-UseLargePages"
+
 COPY --chown=solr:solr ./solr8.11.2_files/lib /var/solr/lib
-#COPY --chown=solr:solr --chmod=0755  ./indexing_data.sh /usr/local/bin/indexing_data.sh
 
 #=======================================================
 FROM common AS standalone
@@ -26,13 +33,11 @@ FROM common AS embedded_zookeeper
 
 COPY --chown=solr:solr ./solr8.11.2_files/conf /opt/solr/core-x
 
-COPY --chown=solr:solr --chmod=0755  ./solr8.11.2_files/solrCloud_embedded_zooKeeper/init_files/solr_init.sh /usr/local/bin/solr_init.sh
+COPY --chown=solr:solr ./solr8.11.2_files/security.json /opt/solr/security.json
 
-COPY --chown=solr:solr --chmod=0755 ./solr8.11.2_files/solrCloud_embedded_zooKeeper/collection_manager.sh /var/solr/data/collection_manager.sh
+COPY --chown=solr:solr --chmod=0755  ./solr8.11.2_files/solrCloud_embedded_zooKeeper/init_files/solr_init.sh /usr/bin/solr_init.sh
 
-#ENV SOLR_OPTS "-XX:-UseLargePages -Djetty.host=127.0.0.1 -Dlog4j2.formatMsgNoLookups=true"
-
-RUN /usr/local/bin/solr_init.sh
+RUN /usr/bin/solr_init.sh
 
 #=======================================================
 FROM common AS external_zookeeper
@@ -40,10 +45,22 @@ FROM common AS external_zookeeper
 
 COPY --chown=solr:solr ./solr8.11.2_files/conf /opt/solr/core-x
 
-COPY --chown=solr:solr ./solr8.11.2_files/conf /var/solr/data/core-x
+COPY --chown=solr:solr ./solr8.11.2_files/security.json /opt/solr/security.json
 
 COPY --chown=solr:solr --chmod=0755 ./solr8.11.2_files/solrCloud_external_zooKeeper/init_files/solr_init.sh /usr/bin/solr_init.sh
 
 COPY --chown=solr:solr --chmod=0755 ./solr8.11.2_files/solrCloud_external_zooKeeper/collection_manager.sh /var/solr/data/collection_manager.sh
 
+# Run this script to start solr as an entrypoint to configure the container to run as an executable
 ENTRYPOINT ["/usr/bin/solr_init.sh"]
+
+#=======================================================
+FROM common AS external_zookeeper_kubernetes
+# any steps specific to building the image with external zookeeper
+
+COPY --chown=solr:solr ./solr8.11.2_files/conf /opt/solr/core-x
+
+COPY --chown=solr:solr --chmod=0755 ./solr8.11.2_files/solrCloud_external_zooKeeper/init_files/solr_init.sh /usr/bin/solr_init.sh
+
+# Run this script to start solr as an entrypoint to configure the container to run as an executable
+# ENTRYPOINT ["/usr/bin/solr_init.sh"]

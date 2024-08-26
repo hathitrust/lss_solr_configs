@@ -1,52 +1,76 @@
-version: '3'
-
 services:
   full-text-search-external_zoo:
-    image: full-text-search-external_zoo
+    image: ghcr.io/hathitrust/full-text-search-external_zoo:shards-8.11
     container_name: full-text-search-external_zoo
-    build:
-      context: .
-      dockerfile: ./solr8.11.2_files/Dockerfile
-      target: external_zookeeper
     ports:
      - "8983:8983"
     environment:
-      - ZK_HOST=zoo1:2181
-      - SOLR_OPTS=-XX:-UseLargePages # get rid of "shared memory" warnings on Solr startup => https://solr.apache.org/guide/solr/latest/deployment-guide/docker-faq.html
+      - ZK_HOST=zoo1:2181 # If you want to add more zookeeper servers, you can add them separated.
+                          # For example: ZK_HOST=zoo1:2181,zoo2:2181,zoo3:2181
+      - SOLR_OPTS=-XX:-UseLargePages # get rid of "shared memory" warnings on Solr
+                             # startup => https://solr.apache.org/guide/solr/latest/deployment-guide/docker-faq.html
     networks:
       - solr
     depends_on:
-      - zoo1
+      zoo1:
+        condition: service_healthy
     volumes:
       - solr1_data:/var/solr/data
-    command:
-      - solr-foreground
+    command: # Solr command to start the container to make sure the security.json is created
+      - solr-foreground -c
     healthcheck:
       test: [ "CMD", "/usr/bin/curl", "-s", "-f", "http://full-text-search-external_zoo:8983/solr/#/admin/ping" ]
       interval: 5s
       timeout: 10s
-      start_period: 30s
+      start_period: 30s # The time to wait before starting the healthcheck process after the container is started,
+      #it is useful to wait for Solr authentication to be ready
       retries: 5
   zoo1:
-    image: zookeeper:3.6
+    image: zookeeper:3.8.0
     container_name: zoo1
-    restart: always
+    restart: always # Use this option to maintain the high availability of zookeeper service, the service will be restarted if it fails
     hostname: zoo1
     ports:
       - 2181:2181
+      - 7001:7000 # Add this port for the Prometheus metrics provider. In the ZOO_CFG_EXTRA environment variable is
+      # specified that Zookeeper will expose its metrics on port 7000 (metricsProvider.httpPort=7000)
+      # for monitoring purposes.
     environment:
-      ZOO_MY_ID: 1 # To make sure zookeeper server is listen in the right ip:port add unique Id for each Zookeeper server at <dataDir>/myid file. zookeeper1:<dataDir>/myid =1 , zookeeper2:<dataDir>/myid = 2. The dataDir is defined on the zoo.cfg. In our case is /data
-      ZOO_SERVERS: server.1=zoo1:2888:3888;2181
-      ZOO_4LW_COMMANDS_WHITELIST: mntr, conf, ruok
+      ZOO_MY_ID: 1 # To make sure zookeeper server is listen in the right ip:port
+                  # add unique Id for each Zookeeper server at
+                  # <dataDir>/myid file. zookeeper1:<dataDir>/myid =1 , zookeeper2:<dataDir>/myid = 2.
+                  # The dataDir is defined on the zoo.cfg. In our case is /data
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 # The server.1 is the unique id of the server,
+                                                # the zoo1 is the hostname of the server,
+                                                # the 2888 is the port for the quorum communication,
+                                                # the 3888 is the port for the leader election,
+                                                # the 2181 is the client port.
+                  # If you want to add more zookeeper nodes you add them here:
+                  # For example: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr, conf, ruok # The 4lw commands are used to monitor the Zookeeper server.
+                # It is a good practice to add this command to allow only the necessary commands to be executed.
+                # It is also an alternative to protect the security of Zookeeper server.
+                # These commands perform essential monitoring and health checks on the Zookeeper server.
+                  # mntr: to monitor the Zookeeper server
+                  # conf: to get the configuration of the Zookeeper server
+                  # ruok: to check if the Zookeeper server is ok
+      # ZOO_CFG_EXTRA is used to add extra configuration to the zoo.cfg file. For example, to enable the Prometheus metrics provider
       ZOO_CFG_EXTRA: "metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000 metricsProvider.exportJvmInfo=true"
       ZOO_LOG_DIR: "/logs"
     networks:
       - solr
     volumes:
-      - zookeeper1_log:/logs
-      - zookeeper1_data:/data
-      - zookeeper1_datalog:/datalog
-      - zookeeper1_wd:/apache-zookeeper-3.6.0-bin
+      - zookeeper1_log:/logs # The log directory is used to store the Zookeeper logs
+      - zookeeper1_data:/data # The data directory is used to store the Zookeeper data
+      - zookeeper1_datalog:/datalog # The datalog directory is used to store the Zookeeper transaction logs
+      - zookeeper1_wd:/apache-zookeeper-3.8.0-bin # The working directory is used to store the Zookeeper configuration files
+    healthcheck:
+      test: [ "CMD", "echo", "ruok", "|", "nc", "localhost", "2181", "|", "grep", "imok" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  # Service that run the script collection_manager.sh to create Solr collections using the Solr API (curl command)
+  # As solr requires authentication, the container receives the SOLR_USER and SOLR_PASSWORD as environment variables
   collection_creator:
     container_name: collection_creator
     build:
@@ -61,6 +85,36 @@ services:
         condition: service_healthy
     networks:
       - solr
+    profiles: [create_collections]
+    environment:
+      - SOLR_PASSWORD=$SOLR_PASSWORD
+  # Service that use the Python module solr_manager to manage Solr collections and configsets
+  solr_manager:
+    build:
+      context: ./solr_manager
+      target: runtime
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+        ENV: ${ENV:-dev}
+        POETRY_VERSION: ${POETRY_VERSION:-1.5.1}
+        SOLR_PASSWORD: ${SOLR_PASSWORD:-solr}
+        SOLR_USER: ${SOLR_USER:-solrRocks}
+        ZK_HOST: ${ZK_HOST:-zoo1:2181,zoo2:2181,zoo3:2181}
+    env_file:
+      - ./solr_manager/.env
+    volumes:
+      - .:/app
+    stdin_open: true
+    depends_on:
+      full-text-search-external_zoo:
+        condition: service_healthy
+    tty: true
+    container_name: solr_manager
+    networks:
+      - solr
+    profiles: [ solr_collection_manager ]
 networks:
   solr:
 volumes:

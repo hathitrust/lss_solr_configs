@@ -5,8 +5,9 @@
 # Example: ./indexing_data.sh http://localhost:8983 ~/mydata data_sample.zip
 
 solr_url="$1" #Solr URL
-sample_data_directory="$2" #Directory where the sample data is located (XML files)
-zip_file="$3" #Zip file containing the sample data
+solr_pass="$2"
+sample_data_directory="$3" #Directory where the sample data is located (XML files)
+zip_file="$4" #Zip file containing the sample data
 
 if [ -d "$sample_data_directory" ]
     then
@@ -17,10 +18,12 @@ if [ -d "$sample_data_directory" ]
         echo "$home"
     fi
 
+
+echo $SOLR_PASS
 for file in "$sample_data_directory/data_sample/"*.xml
           do
               echo "Indexing $file 🌞!!!"
-              curl "$solr_url/solr/core-x/update?commit=true" -H "Content-Type: text/xml" --data-binary @$file
+              curl -u admin:$solr_pass "$solr_url/solr/core-x/update?commit=true" -H "Content-Type: text/xml" --data-binary @$file
           done
 
 

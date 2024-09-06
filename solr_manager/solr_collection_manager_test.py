@@ -1,9 +1,11 @@
+from os.path import dirname
 from unittest.mock import Mock
 from unittest.mock import patch
 import unittest
 
 import pytest
 import os
+import sys
 
 import requests
 
@@ -87,7 +89,7 @@ def test_upload_configset(mock_put, solr_manager):
     }
     configset_name = "test_configset"
     mock_put.return_value.json.return_value = mock_response
-    path_config_set = f"{os.getcwd()}/solr_files/conf.zip"
+    path_config_set = f"{os.getcwd()}/tests/conf.zip"
     response = solr_manager.upload_configset(configset_name, path_config_set)
     assert response == mock_response
 

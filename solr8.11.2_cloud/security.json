@@ -1,30 +1,103 @@
 {
-      "authentication":{
-        "blockUnknown": true,
-        "class":"solr.BasicAuthPlugin",
-        "credentials": {"admin":"gy10HvsTDlH3OoZ+lsxS8UheuD0LJqyTRw8OctFpZmU= SJmMK1JKEupUbbe2aY43C5bmm1nKQl7cF29nNfiayUE=","k8s-oper":"V0YSTxTD/bDZVBuRgkOlsT7PcJwxzSctfgbwtLLTeEs= t5ZNA5ccPjmujkYFnIxxXkoOny4n6Ljscc5N2zvGyZo=","solr":"1oOylpJqRIlSJvre+06ONKsYsVOFwaHB0vIr06Qm80E= ADFfaSwbSBYzy8HX2BLSfkQnGcuzsKu0xgO9hxJmX+o=","full_text":"V0YSTxTD/bDZVBuRgkOlsT7PcJwxzSctfgbwtLLTeEs= t5ZNA5ccPjmujkYFnIxxXkoOny4n6Ljscc5N2zvGyZo="},
-        "realm":"Solr Basic Auth",
-        "forwardCredentials": false
+  "authentication": {
+    "blockUnknown": true,
+    "class": "solr.BasicAuthPlugin",
+    "credentials": {
+      "admin": "nHexNnZGuy6688sUvRUCWj9Xk0vF4bmxcjvPWMH7lkE= amE2ZzduMnZ1NHk2cjFyMw==",
+      "k8s-oper": "nHexNnZGuy6688sUvRUCWj9Xk0vF4bmxcjvPWMH7lkE= amE2ZzduMnZ1NHk2cjFyMw==",
+      "solr": "nHexNnZGuy6688sUvRUCWj9Xk0vF4bmxcjvPWMH7lkE= amE2ZzduMnZ1NHk2cjFyMw==",
+      "full_text": "nHexNnZGuy6688sUvRUCWj9Xk0vF4bmxcjvPWMH7lkE= amE2ZzduMnZ1NHk2cjFyMw=="
+    },
+    "realm": "Solr Basic Auth",
+    "forwardCredentials": false
+  },
+  "authorization": {
+    "class": "solr.RuleBasedAuthorizationPlugin",
+    "user-role": {
+      "admin": [
+        "admin",
+        "k8s"
+      ],
+      "k8s-oper": [
+        "k8s"
+      ],
+      "solr": [
+        "users",
+        "k8s"
+      ],
+      "full_text": [
+        "users",
+        "k8s"
+      ]
+    },
+    "permissions": [
+      {
+        "name": "k8s-probe-0",
+        "role": null,
+        "collection": null,
+        "path": "/admin/info/system"
       },
-      "authorization": {
-        "class": "solr.RuleBasedAuthorizationPlugin",
-        "user-role": {
-          "admin": ["admin", "k8s"],
-          "k8s-oper": ["k8s"],
-          "solr": ["users", "k8s"],
-          "full_text": ["users", "k8s"]
-        },
-        "permissions": [
-          { "name": "k8s-probe-0", "role":null, "collection": null, "path":"/admin/info/system" }, { "name": "k8s-probe-1", "role":null, "collection": null, "path":"/admin/info/health" },
-          { "name": "k8s-status", "role":"k8s", "collection": null, "path":"/admin/collections" },
-          { "name": "k8s-metrics", "role":"k8s", "collection": null, "path":"/admin/metrics" },
-          { "name": "k8s-zk", "role":"k8s", "collection": null, "path":"/admin/zookeeper/status" },
-          { "name": "k8s-ping", "role":"k8s", "collection": "*", "path":"/admin/ping" },
-          { "name": "read", "role":["admin","users"] },
-          { "name": "update", "role":["admin"] },
-          { "name": "security-read", "role": ["admin"] },
-          { "name": "security-edit", "role": ["admin"] },
-          { "name": "all", "role":["admin"] }
+      {
+        "name": "k8s-probe-1",
+        "role": null,
+        "collection": null,
+        "path": "/admin/info/health"
+      },
+      {
+        "name": "k8s-status",
+        "role": "k8s",
+        "collection": null,
+        "path": "/admin/collections"
+      },
+      {
+        "name": "k8s-metrics",
+        "role": "k8s",
+        "collection": null,
+        "path": "/admin/metrics"
+      },
+      {
+        "name": "k8s-zk",
+        "role": "k8s",
+        "collection": null,
+        "path": "/admin/zookeeper/status"
+      },
+      {
+        "name": "k8s-ping",
+        "role": "k8s",
+        "collection": "*",
+        "path": "/admin/ping"
+      },
+      {
+        "name": "read",
+        "role": [
+          "admin",
+          "users"
+        ]
+      },
+      {
+        "name": "update",
+        "role": [
+          "admin"
+        ]
+      },
+      {
+        "name": "security-read",
+        "role": [
+          "admin"
+        ]
+      },
+      {
+        "name": "security-edit",
+        "role": [
+          "admin"
+        ]
+      },
+      {
+        "name": "all",
+        "role": [
+          "admin"
         ]
       }
-    }
+    ]
+  }
+}

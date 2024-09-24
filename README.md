@@ -346,8 +346,12 @@ because it is a Python module that receives the Solr URL
 as a parameter. 
 You will have to pass the admin password to create collections and upload configsets.
 
+If you start the Solr server in Docker, the admin password is defined in the security.json file and it 
+is the default password used by Solr (solrRocks).
+
+If you start the Solr server in Kubernetes, the admin password is defined in the secrets.
 ```
-export SOLR_PASSWORD='solr-admin-password'
+export SOLR_PASSWORD=solrRocks
 docker compose -f docker-compose.yml --profile solr_collection_manager up
 ```
 

@@ -14,4 +14,4 @@ else
 fi
 
 echo "🚢 Run containers"
-docker compose -f docker-compose.yml --profile solr_collection_manager up
+docker compose -f docker compose.yml --profile solr_collection_manager up

@@ -43,8 +43,8 @@ It is based on the [requests](https://docs.python-requests.org/en/latest/) libra
 with the Solr collections [API] (https://solr.apache.org/guide/8_2/collections-api.html).
 
 The application runs in a docker container, and it is based on the 
-[python:3.11.0a7-slim-buster](https://hub.docker.com/_/python) image. In the docker-compose file, a Solr container with three nodes and 3 embedded zookeeper are also started.
-Their dependencies are managing to use [poetry](https://python-poetry.org/). 
+[python:3.11.0a7-slim-buster](https://hub.docker.com/_/python) image. In the docker-compose file, a Solr container with one node and one embedded 
+zookeeper are also started. Their dependencies are managing to use [poetry](https://python-poetry.org/). 
 
 ## Phases
 The project is divided into the following phases:
@@ -71,11 +71,11 @@ The project is divided into the following phases:
     ```
 
 2. Build the Docker image:
-    ```docker-compose build solr_manager```
+    ```docker compose build solr_manager```
 
 3. Start the container:
     ```
-    docker-compose up -d solr_manager
+    docker compose up -d solr_manager
     ```
 4. [Recommendation] Run the script `init_solr_manager.sh` to start the application and set up the environment variables.
     ```
@@ -99,7 +99,7 @@ SOLR_PASS=your_solr_password
 1. Clone the repo
    ``` git clone git@github.com:hathitrust/lss_solr_configs.git```
 
-2. Set up development environment with poetry
+2. Set up a development environment with poetry
     
     ``cd solr_manager``
   In your workdir,
@@ -127,7 +127,6 @@ This is the main structure of the python application.
 solr_manager/
 ├── Dockerfile
 ├── README.md
-├── docker-compose.yml
 ├── pyproject.toml
 ├── poetry.lock
 ├── .env
@@ -135,16 +134,13 @@ solr_manager/
 │   ├── __init__.py
 │   ├── solr_collection_manager.py
 │   ├── solr_collection_manager_test.py
-└── solr_files/
-    └── test_configset.zip
 init_solr_manager.sh
 ```
 
-As this project requires a Solr server to run, the `docker-compose.yml` file starts a 3 Solr containers
-with 3 embedded zookeepers. For that reason, the solr_manager/docker-compose.yml file depends on some files inside 
-the solr8.11.2_files directory, such as, the Dockerfile and solrCloud_embedded_zookeeper directory.
-
-Inside the solr_files directory, there is a test_configset.zip file that is used to test the upload_configset functionality.
+As solr_manager project requires a Solr server to run, the `docker-compose.yml` file starts a Solr container
+with an embedded zookeeper. For that reason, the service `solr_manager` inside the `docker-compose.yml` file depends 
+on some files inside the `tests` directory. Inside the `tests` directory, there is a test_configset.zip file 
+that is used to test the upload_configset functionality.
 
 ### Design
 

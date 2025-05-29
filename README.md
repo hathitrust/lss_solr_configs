@@ -32,10 +32,10 @@
 This project is a configuration for Solr 6 and 8 to be used in the HathiTrust full-text search. 
 
 The main problem we are trying to solve is to provide HathiTrust custom architecture to Solr server to deal with:
-* Huge indexes that require significant changes to Solr defaults to work;
+* Huge indexes that require significant changes to Solr default to work;
 * Custom indexing to deal with multiple languages and huge documents.
 
-The initial version of HT Solr cluster runs in Solr 6 in standalone mode. The current proposal of this repository
+The initial version of the HT Solr cluster runs in Solr 6 in standalone mode. The current proposal of this repository
 is to upgrade the Solr server to Solr 8 in cloud mode. However, the Solr 6 server documentation will be here for a
 while as legacy and to use it as a reference.
 
@@ -51,13 +51,13 @@ while as legacy and to use it as a reference.
 
 ## Phases
 
-The project is divided into four phases. Each phase has a specific goal to achieve.
+The project is divided into several phases. Each phase has a specific goal to achieve.
 
 * **Phase 1**: Upgrade Solr server from Solr 6 to Solr 8 in cloud mode
     * Understand the Solr 6 architecture to migrate to Solr 8
     * Create a docker image for Solr 8 in cloud mode
-      * Create a docker image for Solr 8 and external Zookeeper
-      * Create a docker image for Solr 8 and embedded Zookeeper
+      * Create a Docker image for Solr 8 and external Zookeeper
+      * Create a Docker image for Solr 8 and embedded Zookeeper
 * **Phase 2**: Index data in Solr 8 and integrate it in [babel-local-dev](https://github.com/hathitrust/babel-local-dev) 
 and [ht_indexer](https://github.com/hathitrust/ht_indexer)
   * Create a script to automate the process of indexing data in Solr 8
@@ -66,6 +66,8 @@ and [ht_indexer](https://github.com/hathitrust/ht_indexer)
   * Deploy the Solr cluster in Kubernetes
   * Create a Python module to manage Solr collections and configsets
   * Clean up the code and documentation
+* **Phase 4**: Upgrade Solr image from Solr 8.11.2 to Solr 8.11.4
+  * As it is a minor upgrade, it should not break the existing configurations and data, so just the Dockerfile will be updated.
   
 ## Project Set Up
 
@@ -81,10 +83,10 @@ and [ht_indexer](https://github.com/hathitrust/ht_indexer)
    ``` git clone git@github.com:hathitrust/lss_solr_configs.git ```
 
 2. Start the Solr server in standalone mode
-   ``` docker-compose -f docker-compose_solr6_standalone.yml up ```
+   ``` docker compose -f docker-compose_solr6_standalone.yml up ```
 
 3. Start the Solr server in cloud mode
-   ``` docker-compose -f docker-compose.yml up ```
+   ``` docker compose -f docker-compose.yml up ```
 
 ## Content Structure
 
@@ -99,7 +101,7 @@ lss_solr_configs/
 │   ├── security.json
 │   ├── collection_manager.sh
 │   └── README.md
-├── solr8.11.2_cloud/
+├── solr_cloud/
 │   ├── Dockerfile
 │   ├── solrconfig.xml
 │   ├── schema.xml
@@ -116,8 +118,8 @@ lss_solr_configs/
 ## Design
 
 * **solr6_standalone**: Contains the Dockerfile and configuration files for Solr 6 in standalone mode.
-* **solr8.11.2_cloud**: Contains the Dockerfile and configuration files for Solr 8.11.2 in cloud mode.
-  * Dockerfile: Dockerfile for building the Solr 8.11.2 cloud image.
+* **solr_cloud**: Contains the Dockerfile and configuration files for Solr in cloud mode.
+  * Dockerfile: Dockerfile for building the Solr cloud image.
     * Create the image with the target:**external_zookeeper_docker** to run Solr in Docker. This application uses 
     the script init_files/solr_init.sh to copy a custom security.json file to initialize Solr and external 
       Zookeeper using the Basic authentication.
@@ -131,19 +133,24 @@ The image will copy files that are relevant to set up the cluster
   * schema.xml: Solr schema file. 
 * **lib/**: Directory for JAR files.
 
+The Solr server will start up without any collections. Collections and configsets are created using `solr_manager` 
+application.
+
 * **solr_manager**: Contains the Dockerfile and scripts for managing Solr collections and configurations using Python.
   * This application will have access to any Solr server running in Docker or Kubernetes.
-  * Inside the solr_manager you will see the Dockerfile for building the image to run the Python application and its 
+  * Inside the `solr_manager`, you will see the Dockerfile for building the image to run the Python application and its 
   documentation.
-  * To create collections and to upload configsets, Solr requires Admin credentials, then you will need it 
+  * To create collections and to upload configsets, Solr requires Admin credentials, and then you will need it 
   to provide the Solr admin password as an environment variable. 
   Find [here](https://hathitrust.atlassian.net/wiki/spaces/HAT/pages/3109158919/Customize+our+Solr+cluster+in+Kubernetes) 
   admin credentials. 
-* **indexing_data.sh**: Use this script for indexing data into Solr when Solr cluster is running.
+* **indexing_data.sh**: Use this script for indexing data into Solr when the Solr cluster is running and the collections are created. 
+  It will extract the XML files from a zip file and index them into Solr. 
+  The script receives the Solr URL, Solr password, path to the zip file with the XML files, and the collection name as parameters.
 
 ### [Legacy] Overview Solr 6 
 
-A solr configuration for LSS consists of five symlinks in the same directory that point to the correct 
+A Solr configuration for LSS consists of five symlinks in the same directory that point to the correct 
 files for that core:
 
 Three of these symlinks will point to the same file regardless of what
@@ -175,14 +182,14 @@ of the cores.
 
 ### Overview Solr 8
 
-* Solr8.11.2 is the latest version of the 8.x series
+* Solr8.11 is the latest version of the 8.x series
 
-### Upgrading our index from Solr6 to Solr8.11.2
+### Upgrading our index from Solr6 to Solr8.11
 
-To set up Solr 8, the same logic and resources used with Solr 6 have reused, then, minimal changes were made on JAR files, 
+To set up Solr 8, the same logic and resources used with Solr 6 have reused; then minimal changes were made on JAR files, 
 Solr schemas, and solrconfig.xml files.
 
-See below the followed steps to upgrade the server from Solr 6 to Solr 8.
+See below the following steps to upgrade the server from Solr 6 to Solr 8.
 
 1) **Create a DockerFile to generate our own image. 
 
@@ -190,13 +197,13 @@ See below the followed steps to upgrade the server from Solr 6 to Solr 8.
   and adding the necessary files to set up the Solr server. We have to ensure the lib (JAR files)
   directories are copied to the image. 
   - The lib directory contains the JAR files. 
-  - The folder conf, that contains the configuration files used by Solr to index the documents, such as:
+  - The folder conf, which contains the configuration files used by Solr to index the documents, such as:
     - schema.xml: The schema file that defines the fields and types of the documents
     - solrconfig.xml: The configuration file that defines the handlers and configurations of the Solr server
     - security.json: The security file that defines the authentication to access the Solr server
 - The image was built with the target **external_zookeeper_docker** 
   to run Solr in Docker. This application uses the script init_files/solr_init.sh to copy a custom security.json file to 
-  initialize Solr and external Zookeeper using the Basic authentication. 
+  initialize Solr and external Zookeeper using Basic authentication. 
   The image was built with the target **common** to run Solr in Kubernetes. 
 Solr will start automatically without the need to run the script solr_init.sh.
 
@@ -210,7 +217,7 @@ Solr will start automatically without the need to run the script solr_init.sh.
 4) **Updating schema.xml**
    * _root_ field is type=int in Solr6 and type=string in Solr8. In Solr 8 _root_ field must be defined 
    using the exact same fieldType as the uniqueKey field (id) uses: string
-5) **Updating solr8.11.2_cloud/conf/solrconfig.xml**
+5) **Updating solr_cloud/conf/solrconfig.xml**
    * This file has been updated along with this project. The date of each update was added in the file to track the changes.
 6) **Create a docker-compose file to start up Solr server and for indexing data**.
 
@@ -229,7 +236,7 @@ Zookeeper server because:
 
 ### Functionality
 
-In the docker-compose file, the address (a string) where ZooKeeper is running is defined, this way Solr is able 
+In the docker-compose.yml file, the address (a string) where ZooKeeper is running is defined; this way Solr is able 
 to connect to ZooKeeper server. 
 Additional environment variables have been added to ensure the Solr server starts up. 
 On this [page](https://hathitrust.atlassian.net/wiki/spaces/HAT/pages/3190292502/Solr+cloud+and+external+Zookeeper+parameters), 
@@ -241,20 +248,21 @@ To upload configset and create new collections, the
 In this repository, 
 the Python package **solr_manager** is based on Solr collection API to manage Solr collections and configsets.
 
-On docker, to start up the Solr server in cloud mode, we mount the script init_files/solr_init.sh in the container 
-to allow setting up the authentication using a predefined security.json file.
-It also copies the security.json file to ZooKeeper using the solr zk cp command. 
-In the docker-compose file, each Solr container should
-run a command to start up the Solr in foreground mode. 
+On Docker, to start up the Solr server in cloud mode, we mount the script `init_files/solr_init.sh` in the container 
+to allow setting up the authentication using a predefined `security.json` file.
+It also copies the security.json file to ZooKeeper using the solr `zk cp` command. 
+In the docker-compose.yml file, each Solr container should
+run a command to start up Solr in foreground mode. 
 
-In the container, we should define health checks to verify the Zookeeper and Solr are working well. 
+In the container, we should define health checks to verify that the Zookeeper and Solr are working well. 
 These health checks
-will help us to define the dependencies between the services in the docker-compose file.
+will help us to define the dependencies between the services in the Docker-Compose file.
 
-If we do not use the health checks, we probably will have to use the scripts wait-for-solr.sh and wait-for-zookeeper.sh 
+If we do not use the health checks,
+we probably will have to use the scripts `wait-for-solr.sh` and `wait-for-zookeeper.sh` 
 to make sure the authentication is set up correctly.
 
-On Kubernetes, none script is necessary to set up the authentication because the Solr operator
+On Kubernetes, no script is necessary to set up the authentication because the Solr operator
 will create the secrets by default.
 
 ### Usage
@@ -262,10 +270,10 @@ will create the secrets by default.
 #### How to start up the Solr 6 server in a standalone mode
 
 * Launch Solr server
-  * `docker-compose -f docker-compose_solr6_standalone.yml up`
+  * `docker compose -f docker-compose_solr6_standalone.yml up`
 
 * Stop Solr server
-  * `docker-compose -f docker-compose_solr6_standalone down` 
+  * `docker compose -f docker-compose_solr6_standalone down` 
 
 * Go inside the Solr container
   * `docker exec -it solr-lss-dev-8 /bin/bash`
@@ -297,31 +305,31 @@ following specifications:
 #### How to start up the Solr 8 server in clode mode with external Zookeeper
 
 ```
-docker-compose -f docker-compose.yml up
+docker compose -f docker-compose.yml up
 ```
 
 * Start up the Solr server in cloud mode with external Zookeeper. The following services will run in the docker-compose file:
   * solr1
   * zoo1
 
-In the folder .github/workflows, there is a workflow to create the image for Solr and external Zookeeper. 
+In the folder `.github/workflows`, there is a workflow to create the image for Solr and external Zookeeper. 
 This workflow creates the image for the different platforms 
-(linux/amd64, linux/arm64, linux/arm/v7) and pushes the image to the
+(`linux/amd64`, `linux/arm64`, `linux/arm/v7`) and pushes the image to the
 GitHub container registry. 
 You should use this image to start up the Solr server in Kubernetes.
 
-In Kubernetes, you should use a multiple platform image to run the Solr server.
-The recommendation is use the [github actions workflow](https://github.com/hathitrust/lss_solr_configs/actions) 
+In Kubernetes, you should use `multiple platform images` to run the Solr server.
+The recommendation is to use the [GitHub Actions workflow](https://github.com/hathitrust/lss_solr_configs/actions) 
 to create the image for the different platforms. 
 
-If you are doing changes in the Dockerfile or in the solr_init.sh script, it is better to create the image
-each time you run the docker-compose file instead of using the image in the repository.
+If you are doing changes in the Dockerfile or in the `solr_init.sh script`, it is better to create the image
+each time you run the `docker-compose.yml` file instead of using the image in the repository.
 
-Update the solr service adding the following lines:
+Update the Solr service adding the following lines:
 ```
     build:
       context: .
-      dockerfile: solr8.11.2_cloud/Dockerfile
+      dockerfile: solr_cloud/Dockerfile
       target: external_zookeeper_docker
 ```
 
@@ -337,16 +345,16 @@ docker image push ghcr.io/hathitrust/full-text-search-cloud:shards-docker
 
 #### How to run the application to manage collections and configset
 
-The service to manage collections is defined in the docker-compose.yml. 
+The service to manage collections is defined in the `docker-compose.yml`. 
 As it is dependent on Solr, for convenience, it 
-is in the same docker-compose file. 
-However, once the solr_manager container is up, you can use it to manage any 
+is in the same `docker-compose.yml` file. 
+Once the `solr_manager` container is up, you can use it to manage any 
 collection in any Solr server running in Docker or Kubernetes, 
 because it is a Python module that receives the Solr URL
 as a parameter. 
 You will have to pass the admin password to create collections and upload configsets.
 
-If you start the Solr server in Docker, the admin password is defined in the security.json file and it 
+If you start the Solr server in Docker, the admin password is defined in the `security.json` file and it 
 is the default password used by Solr (solrRocks).
 
 If you start the Solr server in Kubernetes, the admin password is defined in the secrets.
@@ -360,10 +368,57 @@ Using `--profile` option in the docker-compose file, you can start up the follow
   * zoo1
   * solr_manager
 
-Read solr_manager/README.md to see how to use this module.
+Read `solr_manager/README.md` to see how to use this module.
 
 #### How to run the application to create the Solr cluster with one collection
 
+Once the Solr server is running, you can use the `solr_collection_manager.py` script to create a collection and upload a configset.
+
+* Build the Docker image for the Solr collection manager
+
+```
+docker compose build solr_manager
+```
+
+* Start the Solr collection manager service
+```
+docker compose up -d solr_manager
+```
+
+* Run the script to upload a configset.
+The `tests/conf.zip` file contains the configuration files for the collection, and it is located in the `solr_manager` 
+directory, and it is mounted in the container.
+
+```bash
+docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action upload_configset --configset_name core-x --path_configset tests/conf.zip
+```
+
+* Run the script to create a collection once the configset is uploaded
+```bash
+docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action create_collection --name core-x --num_shards 1 --max_shards_per_node 1 --replication_factor 1 --configset_name core-x
+```
+
+#### How to index data in Solr 8
+To index data in Solr 8, you can use the `indexing_data.sh` script.
+To run the script, you will need to pass the following parameters:
+* Solr URL, 
+* Solr password,
+* the path to the folder where the XML files will be extracted, 
+* the path to the zip file with the XML files, and 
+* The collection name
+
+```bash
+export SOLR_PASSWORD=solrRocks
+./indexing_data.sh http://localhost:8983 $SOLR_PASSWORD ~/mydata data_sample.zip core-x
+```
+
+* To create the collection in full-text search server, use the command below
+  * `docker exec solr-lss-dev /var/solr/data/collection_manager.sh`
+  * `docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action upload_configset --configset_name core-x --path_configset tests/conf.zip`
+  * `docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action create_collection --name core-x --num_shards 1 --max_shards_per_node 1 --replication_factor 1 --configset_name core-x`
+
+* To index data in the full-text search server, use the command below
+  * `./indexing_data.sh http://localhost:8983 solr_pass ~/mydata data_sample.zip core-x`
 
 
 #### How to integrate it in babel-local-dev
@@ -442,7 +497,7 @@ following specifications
       profiles: [ solr_collection_manager ]
 ```
 
-You might add the following list of volume to the docker-compose file.
+You might add the following list of volumes to the docker-compose file.
 
 ```solr1_data:
 
@@ -456,12 +511,6 @@ You might add the following list of volume to the docker-compose file.
 * To start up the application, 
   * docker-compose build 
   * docker-compose up 
-
-* To create the collection in full-text search server, use the command below
-  * `docker exec solr-lss-dev /var/solr/data/collection_manager.sh`
-
-* To index data in full-text search server use the command below
-  * `./indexing_data.sh http://localhost:8983 solr_pass ~/mydata data_sample.zip core-x`
 
 
 ## Hosting
@@ -505,7 +554,7 @@ You will have to add the data sample to the docker image or download it from a r
 ```data_loader:
     build:
       context: ./lss_solr_configs
-      dockerfile: ./solr8.11.2_files/Dockerfile
+      dockerfile: ./solr_cloud/Dockerfile
       target: external_zookeeper
     entrypoint: [ "/bin/sh", "-c" ,"indexing_data.sh http://solr-lss-dev:8983" ]
     volumes:

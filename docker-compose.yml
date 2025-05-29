@@ -30,8 +30,8 @@ services:
     profiles: [ solr_collection_manager ]
   solr1:
     build:
-      context: .
-      dockerfile: solr8.11.2_cloud/Dockerfile
+      context: solr_cloud
+      dockerfile: Dockerfile
       target: external_zookeeper_docker
     container_name: solr1
     ports:

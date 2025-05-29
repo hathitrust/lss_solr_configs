@@ -39,7 +39,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./solr8.11.2_cloud/Dockerfile
+          file: ./solr_cloud/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/hathitrust/full-text-search-cloud:shards-docker
@@ -51,7 +51,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./solr8.11.2_cloud/Dockerfile
+          file: ./solr_cloud/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/hathitrust/full-text-search-cloud:shards-kubernetes

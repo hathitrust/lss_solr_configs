@@ -1,0 +1,74 @@
+services:
+  solr_manager:
+    build:
+      context: solr_manager
+      target: runtime
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+        ENV: ${ENV:-dev}
+        POETRY_VERSION: ${POETRY_VERSION:-1.5.1}
+        SOLR_PASSWORD: ${SOLR_PASSWORD:-solr}
+        SOLR_USER: ${SOLR_USER:-solrRocks}
+        ZK_HOST: ${ZK_HOST:-zoo1:2181}
+    env_file:
+      - solr_manager/.env
+    volumes:
+      - .:/app
+    stdin_open: true
+    depends_on:
+      solr1:
+        condition: service_healthy
+    tty: true
+    container_name: solr_manager
+    profiles: [ solr_collection_manager ]
+  solr1:
+    build:
+      context: solr9_cloud
+      dockerfile: Dockerfile
+      target: external_zookeeper_docker
+    container_name: solr1
+    ports:
+     - "8983:8983"
+    environment:
+      - ZK_HOST=zoo1:2181
+      # NOTE: this environment-level SOLR_OPTS overrides (not appends to) the Dockerfile's ENV SOLR_OPTS,
+      # so any flag needed at runtime (e.g. solr.config.lib.enabled, required for the <lib/> directives
+      # in this configset) must be repeated here too.
+      - SOLR_OPTS=-XX:-UseLargePages
+      # FIX: This loads ICU globally at boot, resolving the NoClassDefFoundError
+      - SOLR_MODULES=analysis-extras # Enable Solr modules explicitly
+    depends_on:
+      zoo1:
+        condition: service_healthy
+    volumes:
+      - solr1_data:/var/solr
+    command: solr-foreground # Solr command to start the container to make sure the security.json is created
+    healthcheck:
+      # security.json's blockUnknown:true rejects this path unauthenticated even though its
+      # "k8s-probe-0" permission lists role: null - verified empirically, every anonymous variant of
+      # this and other admin/health paths 401s. Credentials here must match Dockerfile's SOLR_AUTHENTICATION_OPTS.
+      test: [ "CMD", "/usr/bin/curl", "-fsS", "-u", "solr:solrRocks", "http://solr1:8983/solr/admin/info/system" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  zoo1:
+    image: zookeeper:3.9.0
+    container_name: zoo1
+    restart: always
+    hostname: zoo1
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr, conf, ruok
+    volumes:
+      - zoo1_data:/data
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "-w", "2", "localhost", "2181" ] # Check if ZooKeeper is listening on port 2181
+      interval: 30s
+      timeout: 10s
+      retries: 5
+volumes:
+  solr1_data: null
+  zoo1_data: null

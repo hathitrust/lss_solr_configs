@@ -1,3 +1,5 @@
+import json
+
 import requests
 import zipfile
 import shutil
@@ -11,7 +13,7 @@ class SolrCollectionManager:
     A class to manage Solr collections and configsets.
 
     The class uses requests to interact with the Solr collections API.
-    Https://solr.apache.org/guide/8_2/collections-api.html
+    https://solr.apache.org/guide/solr/9_10/configuration-guide/collections-api.html
 
     Collections API is provided to allow you to control your cluster, including the collections, shards,
     replicas, backups, leader election, and other operations needs.
@@ -22,7 +24,7 @@ class SolrCollectionManager:
     -----------
     solr_url : str
         The URL of the Solr server.
-    solr_admin_url : str
+    collection_endpoint_url : str
         The URL for Solr admin collections API.
     auth : HTTPBasicAuth or None
         The authentication object for Solr, if provided.
@@ -46,7 +48,9 @@ class SolrCollectionManager:
 
     def __init__(self, solr_url, solr_user=None, solr_pass=None):
         self.solr_url = solr_url
-        self.solr_admin_url = f"{solr_url}/solr/admin/collections"
+        # Modern V2 API collections path
+        self.collection_endpoint_url = f"{solr_url}/api/collections"
+        self.configset_endpoint_url = f"{solr_url}/api/configsets"
         self.auth = HTTPBasicAuth(solr_user, solr_pass) if solr_user and solr_pass else None
 
     def ping(self):
@@ -64,37 +68,25 @@ class SolrCollectionManager:
             print(f"Error: {e}")
             return False
 
-    def create_collection(self, name, num_shards=1, replication_factor=1, configset_name=None, max_shards_per_node=1):
-        """
-        Create a new collection in Solr.
-        :param name: Name of the collection.
-        :param num_shards: Number of shards.
-        :param replication_factor: Replication factor.
-        :param configset_name: Name of the configset.
-        :param max_shards_per_node: Maximum number of shards per node.
-        :return: JSON response.
-        """
-
-        input_params = {
-            'action': 'CREATE',
-            'name': name,
-            'numShards': num_shards,
-            'replicationFactor': replication_factor,
-            'collection.configName': configset_name,
-            'maxShardsPerNode': max_shards_per_node
-        }
-
-        response = requests.get(self.solr_admin_url, params=input_params, auth=self.auth)
-        return response.json()
-
-    def upload_configset(self, name_configset, path_configset):
+    def upload_configset(self, name_configset, path_configset, overwrite=True, cleanup=False):
         """
         Upload a configset to Solr.
         :param name_configset: Name of the configset.
         :param path_configset: Path to the folder with the configset.
+        :param overwrite: Overwrite an existing configset with the same name. Solr 9's v1 UPLOAD
+            action defaults this to False and raises "already exists in zookeeper" otherwise, so
+            it must be passed explicitly to update a configset in place.
+        :param cleanup: When overwriting, delete files left over from the previous configset that
+            are not part of the new upload.
         :return: JSON response.
         """
-        url = f"{self.solr_url}/api/cluster/configs/{name_configset}"
+        overwrite_param = str(overwrite).lower()
+        cleanup_param = str(cleanup).lower()
+        # Modern v2 URL structure: Name is part of the path, action is implied by PUT
+        url = (
+            f"{self.configset_endpoint_url}/{name_configset}"
+            f"?overwrite={overwrite_param}&cleanup={cleanup_param}"
+        )
 
         headers = {
             "Content-Type": "application/octet-stream"
@@ -116,27 +108,55 @@ class SolrCollectionManager:
             print(f"Uploaded configset: {name_configset}")
         return response.json()
 
-    def delete_configset(self, configset_name):
-        url = f"{self.solr_url}/api/cluster/configs/{configset_name}"
+    def delete_configset(self, name_configset):
+        url = f"{self.configset_endpoint_url}/{name_configset}"
         response = requests.delete(url, auth=self.auth)
         response.raise_for_status()  # Raise an exception for HTTP errors
         return response.json()
 
-    def delete_collection(self, name):
-        input_params = {
-            'action': 'DELETE',
-            'name': name
+    def create_collection(self, name, num_shards=1, replication_factor=1, configset_name=None):
+        """
+        Create a new collection in Solr.
+        :param name: Name of the collection.
+        :param num_shards: Number of shards.
+        :param replication_factor: Replication factor.
+        :param configset_name: Name of the configset.
+        :return: JSON response.
+        """
+
+        # The V2 API passes parameters inside a structured JSON body
+        payload = {
+                'name': name,
+                'numShards': num_shards,
+                'replicationFactor': replication_factor
         }
-        response = requests.get(self.solr_admin_url, params=input_params, auth=self.auth)
+        # 'collection.configName' maps directly to 'config' in V2
+        if configset_name:
+            payload["config"] = configset_name
+
+        # V2 creation requires an HTTP POST with content-type application/json
+        response = requests.post(self.collection_endpoint_url, json=payload, auth=self.auth)
+        return response.json()
+
+    def delete_collection(self, name):
+
+        # Modern V2 API path structures the collection name into the URL
+        url = f"{self.collection_endpoint_url}/{name}"
+
+        # V2 deletion uses the native HTTP DELETE method
+        response = requests.delete(url, auth=self.auth)
         return response.json()
 
     def list_collections(self):
-        input_params = {
-            'action': 'LIST'
-        }
-        response = requests.get(self.solr_admin_url, params=input_params, auth=self.auth)
-        return response.json()
 
+        """
+        List all collections in Solr 9.10.1 using the V2 API.
+        :return: JSON response containing the list of collection names.
+        """
+
+        # V2 uses a native HTTP GET on the collections path (no parameters needed)
+        response = requests.get(self.collection_endpoint_url, auth=self.auth)
+        return response.json()
 
 def main():
     """
@@ -179,15 +199,16 @@ def main():
     parser.add_argument('--num_shards', type=int, help='Number of shards', required=False, default=1)
     parser.add_argument('--replication_factor', type=int, help='Replication factor', required=False,
                         default=1)
-    # Defining maxShardsPerNode sets a limit on the number of replicas the CREATE action will spread to each node.
-    parser.add_argument('--max_shards_per_node', type=int, help='Number of shards', required=False,
-                        default=1)
 
     # Configset parameters
     parser.add_argument('--configset_name', type=str, help='Name of the configset',
                         required=False, default=None)
     parser.add_argument('--path_configset', type=str, help='Path to the configset',
                         required=False, default=None)
+    parser.add_argument('--overwrite', type=str, help='Overwrite an existing configset when uploading '
+                        '(required by Solr 9 to update a configset in place)', required=False, default='true')
+    parser.add_argument('--cleanup', type=str, help='Delete stale files from the previous configset '
+                        'when overwriting', required=False, default='false')
 
     # Actions
     args = parser.parse_args()
@@ -200,7 +221,9 @@ def main():
             "function": manager.upload_configset,
             "params": {
                 "name_configset": args.configset_name,
-                "path_configset": args.path_configset
+                "path_configset": args.path_configset,
+                "overwrite": args.overwrite.lower() == 'true',
+                "cleanup": args.cleanup.lower() == 'true'
             }
         },
         "delete_configset": {
@@ -215,8 +238,7 @@ def main():
                 "name": args.name,
                 "num_shards": args.num_shards,
                 "replication_factor": args.replication_factor,
-                "configset_name": args.configset_name,
-                "max_shards_per_node": args.max_shards_per_node
+                "configset_name": args.configset_name
             }
         },
         "list_collections": {
@@ -236,7 +258,7 @@ def main():
 
     # Use the match statement to handle each case
     match action:
-        case "upload_configset" | "create_collection" | "list_collections" | "delete_collection":
+        case "upload_configset" | "create_collection" | "list_collections" | "delete_collection" | "delete_configset":
             func = actions[action]["function"]
             params = actions[action]["params"]
             result = func(**params)

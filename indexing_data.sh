@@ -25,7 +25,7 @@ echo $SOLR_PASS
 for file in "$sample_data_directory/data_sample/"*.xml
           do
               echo "Indexing $file 🌞!!!"
-              curl -u admin:$solr_pass "$solr_url/solr/$collection_name/update?commit=true" -H "Content-Type: text/xml" --data-binary @$file
+              curl -u solr:$solr_pass "$solr_url/solr/$collection_name/update?commit=true" -H "Content-Type: text/xml" --data-binary @$file
           done
 
 

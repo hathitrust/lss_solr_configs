@@ -1,11 +1,9 @@
-from os.path import dirname
 from unittest.mock import Mock
 from unittest.mock import patch
 import unittest
 
 import pytest
 import os
-import sys
 
 import requests
 
@@ -54,27 +52,24 @@ def test_ping_failure(mock_get, solr_manager):
     mock_get.assert_called_once_with(f'{solr_manager.solr_url}/solr/', auth=solr_manager.auth)
     unittest.TestCase().assertFalse(result)
 
-@patch('requests.get')
-def test_create_collection(mock_get, solr_manager):
+@patch('requests.post')
+def test_create_collection(mock_post, solr_manager):
     mock_response = {
         "responseHeader": {
             "status": 0,
             "QTime": 1
         }
     }
-    mock_get.return_value.json.return_value = mock_response
+    mock_post.return_value.json.return_value = mock_response
 
     response = solr_manager.create_collection("test_collection")
     assert response == mock_response
-    mock_get.assert_called_once_with(
-        f"http://{SOLR_HOST_NAME}:8983/solr/admin/collections",
-        params={
-            'action': 'CREATE',
+    mock_post.assert_called_once_with(
+        f"{solr_manager.collection_endpoint_url}",
+        json={
             'name': 'test_collection',
             'numShards': 1,
-            'replicationFactor': 1,
-            'collection.configName': None,
-            'maxShardsPerNode': 1
+            'replicationFactor': 1
         },
         auth=solr_manager.auth
     )
@@ -105,12 +100,12 @@ def test_delete_configset(mock_delete, solr_manager):
     response = solr_manager.delete_configset(configset_name)
 
     # Assert
-    mock_delete.assert_called_once_with(f'{solr_manager.solr_url}/api/cluster/configs/{configset_name}',
+    mock_delete.assert_called_once_with(f'{solr_manager.configset_endpoint_url}/{configset_name}',
                                         auth=solr_manager.auth)
     assert response == {'responseHeader': {'status': 0}}
 
-@patch('requests.get')
-def test_create_collection_already_exist(mock_get, solr_manager):
+@patch('requests.post')
+def test_create_collection_already_exist(mock_post, solr_manager):
     collection_name = "test_collection"
     mock_response = {
         "responseHeader": {
@@ -118,42 +113,35 @@ def test_create_collection_already_exist(mock_get, solr_manager):
             "msg": f"collection already exists: {collection_name}"
         }
     }
-    mock_get.return_value.json.return_value = mock_response
+    mock_post.return_value.json.return_value = mock_response
 
     response = solr_manager.create_collection("test_collection")
     assert response == mock_response
 
-    mock_get.assert_called_once_with(
-        f"http://{SOLR_HOST_NAME}:8983/solr/admin/collections",
-        params={
-            'action': 'CREATE',
-            'name': collection_name,
+    mock_post.assert_called_once_with(
+        f"{solr_manager.collection_endpoint_url}",
+        json={
+            'name': 'test_collection',
             'numShards': 1,
-            'replicationFactor': 1,
-            'collection.configName': None,
-            'maxShardsPerNode': 1
+            'replicationFactor': 1
         },
         auth=solr_manager.auth
     )
 
-@patch('requests.get')
-def test_delete_collection(mock_get, solr_manager):
+@patch('requests.delete')
+def test_delete_collection(mock_delete, solr_manager):
     mock_response = {
         "responseHeader": {
             "status": 0,
             "QTime": 1
         }
     }
-    mock_get.return_value.json.return_value = mock_response
+    mock_delete.return_value.json.return_value = mock_response
 
     response = solr_manager.delete_collection("test_collection")
     assert response == mock_response
-    mock_get.assert_called_once_with(
-        f"http://{SOLR_HOST_NAME}:8983/solr/admin/collections",
-        params={
-            'action': 'DELETE',
-            'name': 'test_collection'
-        },
+    mock_delete.assert_called_once_with(
+        f"{solr_manager.collection_endpoint_url}/test_collection",
         auth=solr_manager.auth
     )
 
@@ -172,9 +160,6 @@ def test_list_collections(mock_get, solr_manager):
     response = solr_manager.list_collections()
     assert response == mock_response
     mock_get.assert_called_once_with(
-        f"http://{SOLR_HOST_NAME}:8983/solr/admin/collections",
-        params={
-            'action': 'LIST'
-        },
+        f"http://{SOLR_HOST_NAME}:8983/api/collections",
         auth=solr_manager.auth
     )

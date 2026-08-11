@@ -29,7 +29,7 @@
 
 ## About The Project
 
-This project is a configuration for Solr 6 and 8 to be used in the HathiTrust full-text search. 
+This project is a configuration for Solr 6, 8, and 9 to be used in the HathiTrust full-text search. 
 
 The main problem we are trying to solve is to provide HathiTrust custom architecture to Solr server to deal with:
 * Huge indexes that require significant changes to Solr default to work;
@@ -68,7 +68,21 @@ and [ht_indexer](https://github.com/hathitrust/ht_indexer)
   * Clean up the code and documentation
 * **Phase 4**: Upgrade Solr image from Solr 8.11.2 to Solr 8.11.4
   * As it is a minor upgrade, it should not break the existing configurations and data, so just the Dockerfile will be updated.
-  
+* **Phase 5**: Upgrade Solr image from Solr 8.11.4 to Solr 9 in cloud mode
+  * Create `solr9_cloud/` as a new sibling directory (mirroring how `solr6_standalone/` was kept as a reference
+    after the 6→8 move); `solr_cloud/` stays as the Solr 8 baseline for relevance-regression comparison.
+  * Migrate `schema.xml`'s numeric/date field types from `Trie*Field` to `*PointField` (Trie fields are deprecated
+    in Solr 9, removed in Solr 10) and fix a pre-existing gap where the `FullText` fieldType silently used Solr's
+    default BM25 params instead of the tuned `k1=10`/`b=0.75` used everywhere else.
+  * Migrate `solrconfig.xml`'s cache implementations from `LRUCache`/`FastLRUCache` to `CaffeineCache` (the only
+    non-deprecated cache implementation as of Solr 9.0).
+  * Work around three Solr 9 Docker/security changes found only by booting the image locally: the official
+    image's entrypoint script moved paths, `<lib/>` directives are now disabled by default
+    (`-Dsolr.config.lib.enabled=true` re-enables them), and a new Java Security Manager sandbox blocks reading
+    custom lib directories by default (`SOLR_SECURITY_MANAGER_ENABLED=false` disables it).
+  * Recompile the custom `HTPostingsFormatWrapper` postings format and the UMich ISBN/LCCN/call-number normalization
+    filters against Solr 9's Lucene version (9.12.3) and update the `lib/` directory with the new JARs.
+
 ## Project Set Up
 
 ### Prerequisites
@@ -108,6 +122,11 @@ lss_solr_configs/
 │   ├── core.properties
 │   ├── lib/
 │   └── data/
+├── solr9_cloud/
+│   ├── Dockerfile
+│   ├── solrconfig.xml
+│   ├── schema.xml
+│   └── lib/
 ├── solr6_standalone/
 ├── docker-compose_test.yml
 ├── docker-compose_solr6_standalone.yml
@@ -118,7 +137,8 @@ lss_solr_configs/
 ## Design
 
 * **solr6_standalone**: Contains the Dockerfile and configuration files for Solr 6 in standalone mode.
-* **solr_cloud**: Contains the Dockerfile and configuration files for Solr in cloud mode.
+* **solr_cloud**: Contains the Dockerfile and configuration files for Solr 8 in cloud mode. This should be remove once Solr 9 is working.
+* **solr9_cloud**: Same structure and purpose as `solr_cloud`, upgraded to Solr 9 - see Phase 5 above.
   * Dockerfile: Dockerfile for building the Solr cloud image.
     * Create the image with the target:**external_zookeeper_docker** to run Solr in Docker. This application uses 
     the script init_files/solr_init.sh to copy a custom security.json file to initialize Solr and external 
@@ -234,6 +254,17 @@ Zookeeper server because:
 * It is easier to manage the Solr cluster and Zookeeper separately;
 * It is easier to scale the Solr cluster.
 
+### Upgrading our index from Solr8.11 to Solr9
+
+1) ** Update the Dockerfile to use Solr 9.0.0 image and update the JAR files to be compatible with Solr 9.0.0**
+2) ** Update the schema.xml file to use the new field types and remove deprecated field types**
+3) ** Update the solrconfig.xml file to use the new cache implementations and remove deprecated cache implementations**
+4) ** Regenerate the Jar files for the custom HTPostingsFormatWrapper and the UMich ISBN/LCCN/call-number normalization filters to be compatible with Solr 9.0.0**
+
+  - [PR](https://github.com/hathitrust/lss_java_code/pull/2) to updagrade HTPostingsFormatWrapper
+    - Command used to generate the JAR file: `javac --release 17 -cp lucene-core-9.12.3.jar HTPostingsFormatWrapper.java`
+  - PR to upgrade UMich ISBN/LCCN/call-number normalization filters
+    - This was the comman use to generate the JAR files: `mvn -X clean package -Dsolr.version=9.10.1 -Dsolr.docker.image=solr:9.10.1 -Dlucene.version=9.11.1 -Djava.version=17 -DskipTests`
 ### Functionality
 
 In the docker-compose.yml file, the address (a string) where ZooKeeper is running is defined; this way Solr is able 
@@ -358,9 +389,16 @@ If you start the Solr server in Docker, the admin password is defined in the `se
 is the default password used by Solr (solrRocks).
 
 If you start the Solr server in Kubernetes, the admin password is defined in the secrets.
+
+The `solr_manager` service requires a `solr_manager/.env` file (referenced by `env_file` in
+`docker-compose.yml`). Create it from the provided template before starting the service:
+```
+cp solr_manager/env.example solr_manager/.env
+```
+
 ```
 export SOLR_PASSWORD=solrRocks
-docker compose -f docker-compose.yml --profile solr_collection_manager up
+docker compose -f docker-compose_solr9.yml --profile solr_collection_manager up
 ```
 
 Using `--profile` option in the docker-compose file, you can start up the following services
@@ -390,16 +428,16 @@ The `tests/conf.zip` file contains the configuration files for the collection, a
 directory, and it is mounted in the container.
 
 ```bash
-docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action upload_configset --configset_name core-x --path_configset tests/conf.zip
+docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action upload_configset --configset_name core-x --path_configset /app/solr9_cloud/conf/ --overwrite true
 ```
 
 * Run the script to create a collection once the configset is uploaded
 ```bash
-docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action create_collection --name core-x --num_shards 1 --max_shards_per_node 1 --replication_factor 1 --configset_name core-x
+docker exec -it solr_manager python solr_collection_manager.py --solr_url http://solr1:8983 --action create_collection --name core-x --num_shards 1 --replication_factor 1 --configset_name core-x
 ```
 
 #### How to index data in Solr 8
-To index data in Solr 8, you can use the `indexing_data.sh` script.
+To index data in Solr 9, you can use the `indexing_data.sh` script.
 To run the script, you will need to pass the following parameters:
 * Solr URL, 
 * Solr password,

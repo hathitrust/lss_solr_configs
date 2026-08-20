@@ -269,12 +269,30 @@ Try MMapDirectory for now.  If that doesn't work move to standard dir
 
      <autoCommit>
 
-       <maxTime>${solr.autoCommit.maxTime:36000000}</maxTime>
+       <maxTime>${solr.autoCommit.maxTime:600000}</maxTime> <!-- 10 minutes, durability only -->
        <openSearcher>false</openSearcher>
      </autoCommit>
 
- <!-- We have no reason to do soft commits since the search server uses a static read-only index-->
+ <!--
+ Lianet Aug 20, 2026 -
 
+   The earlier architecture: a standalone Solr deployment where the index was built offline in batch and made visible
+   via a full core reload/swap, not via live commits.
+   openSearcher=false made sense there because visibility was never the commit's job.
+
+   Decision: Move to a standard SolrCloud near-real-time (NRT) commit strategy - decouple durability from visibility
+   using both commit types, rather than adding explicit commit=true calls in ht_indexer code (which would cause commit
+   storms on a continuous high-throughput consumer):
+   - Keep autoCommit / openSearcher=false for durability (limits transaction log growth/crash recovery time),
+   but shorten maxTime from 10 hours to ~5–15 minutes.
+   - Add autoSoftCommit with maxTime in the ~30s–2min range to open a searcher periodically and make docs visible,
+   without the fsync cost of a hard commit.
+   - Do not add per-request commit=true in ht_indexer_api.py / document_indexer_service.py - commit policy should stay centralized in solrconfig.xml.
+ -->
+
+     <autoSoftCommit>
+       <maxTime>${solr.autoSoftCommit.maxTime:60000}</maxTime> <!-- 1 minute, visibility only -->
+     </autoSoftCommit>
 
   </updateHandler>
 

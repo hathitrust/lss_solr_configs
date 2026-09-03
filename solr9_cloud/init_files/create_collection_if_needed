@@ -1,0 +1,25 @@
+#!/bin/sh
+
+SOLR_BASIC_AUTH=admin:solrRocks
+
+# wait for solr to be up
+echo "🌅 Waiting for solr to be up"
+while true; do 
+  if curl -o /dev/null -f -s http://localhost:8983/solr/;
+  then 
+    echo "🌞 Solr is responding";
+    break;
+  else 
+    echo "💤 Waiting 5 seconds ...";
+    sleep 5;
+  fi
+done
+
+# check if collection exists
+if bin/solr healthcheck -c core-x
+then
+  echo "🎉 core-x collection already exists"
+else
+  echo "🛠️ Creating core-x collection"
+  bin/solr create_collection -d /opt/solr/core-x -c core-x -shards 1 --replicationFactor 1
+fi

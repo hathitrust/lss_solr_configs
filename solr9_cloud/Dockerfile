@@ -54,6 +54,7 @@ FROM common AS external_zookeeper_docker
 COPY --chown=solr:solr ./security.json /opt/solr/security.json
 
 COPY --chown=solr:solr --chmod=0755 ./init_files/solr_init.sh /usr/bin/solr_init.sh
+COPY --chown=solr:solr --chmod=0755 ./init_files/create_collection_if_needed /usr/bin/create_collection_if_needed
 
 # Run this script to start solr as an entrypoint to configure the container to run as an executable
 ENTRYPOINT ["/usr/bin/solr_init.sh"]

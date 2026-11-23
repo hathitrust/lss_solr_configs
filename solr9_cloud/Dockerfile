@@ -1,4 +1,4 @@
-FROM solr:9.10.1 AS common
+FROM solr:9.11.0 AS common
 
 # Define the authentication type
 ENV SOLR_AUTH_TYPE="basic"
